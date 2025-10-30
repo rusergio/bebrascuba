@@ -1,0 +1,49 @@
+# bebrascuba/docker-compose.yml
+
+# version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./gui
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./gui:/app
+    depends_on:
+      - backend
+  backend:
+    build:
+      context: ./api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/var/www
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: bebras_cuba
+      DB_USERNAME: postgres
+      DB_PASSWORD: 2024
+      FRONTEND_URL: http://localhost:5173
+      SANCTUM_STATEFUL_DOMAINS: localhost:5173
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bebras_cuba
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2024
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
