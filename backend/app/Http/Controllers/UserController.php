@@ -387,8 +387,11 @@ class UserController extends Controller
                 }
 
                 // Todo OK para profesor - Preparar datos
+                // IMPORTANTE: Guardar user_id (ID de la tabla users) como 'id' 
+                // porque el frontend espera usar user_id para las relaciones
                 $datosProfesor = [
-                    'id' => $profesor->id,
+                    'id' => $profesor->user_id, // Guardar user_id en lugar de profesor->id
+                    'profesor_id' => $profesor->id, // También guardar el ID del profesor por si se necesita
                     'id_escuela' => $profesorEscuela->id_escuela,
                     'edicion_actual' => $profesorEscuela->edicion,
                     'es_nuevo' => $profesor->es_nuevo,

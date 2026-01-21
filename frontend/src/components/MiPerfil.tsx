@@ -24,7 +24,8 @@ export function MiPerfil() {
     const [loadingTelefono, setLoadingTelefono] = useState(false);
     const [loadingCorreo, setLoadingCorreo] = useState(false);
     const [loadingPin, setLoadingPin] = useState(false);
-    const id_profesor = localStorage.getItem('userId');
+    // Preferir id de la tabla profesores si está disponible
+    const id_profesor = localStorage.getItem('profesorId') || localStorage.getItem('userId');
     const [currentPhoto, setCurrentPhoto] = useState<string | null>(localStorage.getItem('userPhoto') || null);
 
     useEffect(() => {
@@ -42,15 +43,39 @@ export function MiPerfil() {
 
     // Función para manejar el cambio de rol
     const handleRoleChange = (newRole: string | null) => {
-        if (newRole) {
-            setActiveRole(newRole);
-            setUpdateRol(newRole);
-            localStorage.setItem('activeRole', newRole);
-            // Recargar la página para actualizar la barra de navegación
-            setTimeout(() => {
-                window.location.reload();
-            }, 100);
+        if (!newRole) return;
+
+        // Actualizar contexto y localStorage para el rol activo
+        setActiveRole(newRole);
+        setUpdateRol(newRole);
+        localStorage.setItem('activeRole', newRole);
+
+        // Intentar sincronizar profesorId u otra metadata asociada al rol
+        try {
+            const rolesDataRaw = localStorage.getItem('allUserRolesData');
+            if (rolesDataRaw) {
+                const rolesData = JSON.parse(rolesDataRaw);
+                const roleObj = Array.isArray(rolesData) ? rolesData.find((r: any) => r.rol === newRole) : null;
+                if (roleObj) {
+                    // Soportar distintas formas: roleObj.profesorId o roleObj.profesor?.id
+                    const profId = roleObj.profesorId ?? (roleObj.profesor ? roleObj.profesor.id : null);
+                    if (profId) {
+                        localStorage.setItem('profesorId', String(profId));
+                    }
+                }
+            }
+        } catch (e) {
+            // Si falló parseo o no existe metadata, ignorar y continuar (no crítico)
+            console.warn('No se pudo procesar allUserRolesData al cambiar rol', e);
         }
+
+        // Notificar a otros componentes/pestañas que el localStorage cambió
+        window.dispatchEvent(new Event('localStorageUpdate'));
+
+        // Recargar la página para aplicar cambios de UI (barra de navegación, permisos, etc.)
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
     };
 
     // Preparar datos para el selector de roles

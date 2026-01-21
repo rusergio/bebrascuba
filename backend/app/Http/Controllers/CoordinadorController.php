@@ -39,7 +39,21 @@ class CoordinadorController extends Controller
     // Función para listar profesores nuevos y no activos
     public function listarProfesoresInactivos() {  
         $profesores = Profesor::where('esta_activo', false) 
-            ->select('profesores.es_nuevo','profesores.esta_activo','profesores.perfil_editado', 'users.nombre', 'users.apellidos', 'users.correo', 'users.telefono','escuelas.nombre as nombre_escuela', 'subsistema_escuelas.nombre as subsistema')
+            ->select(
+                'profesores.id',
+                'profesores.es_nuevo',
+                'profesores.esta_activo',
+                'profesores.perfil_editado', 
+                'users.nombre', 
+                'users.apellidos', 
+                'users.correo', 
+                'users.telefono',
+                'users.nro_ci',
+                'escuelas.nombre as nombre_escuela', 
+                'subsistema_escuelas.nombre as subsistema',
+                'escuelas.poblado',
+                'escuelas.telefono as telefono_escuela'
+            )
             ->join('users', 'profesores.user_id', '=', 'users.id')
             ->join('profesor_escuela', 'profesores.id', '=', 'profesor_escuela.id_profesor')
             ->join('escuelas', 'profesor_escuela.id_escuela', '=', 'escuelas.id')
@@ -49,7 +63,7 @@ class CoordinadorController extends Controller
             ->whereNull('profesor_escuela.deleted_at')
             ->whereNull('escuelas.deleted_at')
             ->get();  
-        return response()->json($profesores);  
+        return response()->json($profesores);
     }
 
     // General tabla de estudiante

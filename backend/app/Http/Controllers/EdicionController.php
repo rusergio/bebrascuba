@@ -133,120 +133,147 @@ class EdicionController extends Controller
     }
     // Función para obtener el total de cantidad por provincia  
     public function totalCantidadPorProvincia() {  
-        // Obtener la penúltima edición  
-        $penultimaEdicion = Edicion::latest()->skip(1)->first();  
-        // Obtener los resultados de la penúltima edición, excluyendo la categoría 7  
-        $resultados = ResultadosProvincias::where('id_edicion', $penultimaEdicion->id)  
-            ->where('id_categoria', '!=', 7)  
-            ->get();  
-        // Calcular el total de cantidad por provincia  
-        $totalPorProvincia = [];  
-        foreach ($resultados as $resultado) {  
-            if (!isset($totalPorProvincia[$resultado->id_provincia])) {  
-                $totalPorProvincia[$resultado->id_provincia] = 0;  
-            }  
-            $totalPorProvincia[$resultado->id_provincia] += $resultado->cantidad;  
-        }  
-        return $totalPorProvincia;  
-    }  
+        // Obtener la última edición cerrada (abierto = false)
+        // Preferimos ordenar por n_edicion descendente para obtener la edición más reciente cerrada
+        $penultimaEdicion = Edicion::where('abierto', false)
+            ->orderBy('n_edicion', 'desc')
+            ->first();
+
+        // Si no hay edición cerrada, retornar array vacío
+        if (!$penultimaEdicion) {
+            return [];
+        }
+
+        // Obtener los resultados de la edición cerrada, excluyendo la categoría 7
+        $resultados = ResultadosProvincias::where('id_edicion', $penultimaEdicion->id)
+            ->where('id_categoria', '!=', 7)
+            ->get();
+
+        // Calcular el total de cantidad por provincia
+        $totalPorProvincia = [];
+        foreach ($resultados as $resultado) {
+            if (!isset($totalPorProvincia[$resultado->id_provincia])) {
+                $totalPorProvincia[$resultado->id_provincia] = 0;
+            }
+            $totalPorProvincia[$resultado->id_provincia] += $resultado->cantidad;
+        }
+        return $totalPorProvincia;
+    }
     // Función para listar los resultados provincial
     public function listarResultadosProvincias() {  
-        // Obtener la penúltima edición  
-        $penultimaEdicion = Edicion::latest()->skip(1)->first();  
-        // Obtener los resultados de la penúltima edición ordenados por id_provincia  
-        $resultados = ResultadosProvincias::with('provincia', 'categoria')  
+        // Obtener la última edición cerrada (abierto = false)
+        $penultimaEdicion = Edicion::where('abierto', false)
+            ->orderBy('n_edicion', 'desc')
+            ->first();
+
+        // Si no hay edición cerrada, retornar arreglo vacío
+        if (!$penultimaEdicion) {
+            return [];
+        }
+
+        // Obtener los resultados de la edición cerrada ordenados por id_provincia
+        $resultados = ResultadosProvincias::with('provincia', 'categoria')
             ->where('id_edicion', $penultimaEdicion->id)
             ->where('id_categoria', '!=', 7)    
             ->orderBy('id_provincia')  
-            ->get();  
-        // Preparar los datos para retornar  
-        $data = [];  
-        foreach ($resultados as $resultado) {  
-            $provincia = $resultado->provincia;  
-            $categoria = $resultado->categoria;  
-            if (!isset($data[$provincia->nombre])) {  
-                $data[$provincia->nombre] = [  
-                    'provincia' => $provincia->nombre,  
-                    'superpegues' => 0,  
-                    'peque' => 0,  
-                    'benjamin' => 0,  
-                    'cadete' => 0,  
-                    'junior' => 0,  
-                    'senior' => 0,  
-                    'total' => 0  
-                ];  
-            }  
-            switch ($categoria->nombre_cuba) {  
-                case 'Superpegues':  
-                    $data[$provincia->nombre]['superpegues'] += $resultado->cantidad;  
-                    break;  
-                case 'Peque':  
-                    $data[$provincia->nombre]['peque'] += $resultado->cantidad;  
-                    break;  
-                case 'Benjamín':  
-                    $data[$provincia->nombre]['benjamin'] += $resultado->cantidad;  
-                    break;  
-                case 'Cadete':  
-                    $data[$provincia->nombre]['cadete'] += $resultado->cantidad;  
-                    break;  
-                case 'Junior':  
-                    $data[$provincia->nombre]['junior'] += $resultado->cantidad;  
-                    break;  
-                case 'Senior':  
-                    $data[$provincia->nombre]['senior'] += $resultado->cantidad;  
-                    break;  
-            }  
-            $data[$provincia->nombre]['total'] += $resultado->cantidad;  
-        }  
-        return array_values($data);  
+            ->get();
+
+        // Preparar los datos para retornar
+        $data = [];
+        foreach ($resultados as $resultado) {
+            $provincia = $resultado->provincia;
+            $categoria = $resultado->categoria;
+            if (!isset($data[$provincia->nombre])) {
+                $data[$provincia->nombre] = [
+                    'provincia' => $provincia->nombre,
+                    'superpegues' => 0,
+                    'peque' => 0,
+                    'benjamin' => 0,
+                    'cadete' => 0,
+                    'junior' => 0,
+                    'senior' => 0,
+                    'total' => 0
+                ];
+            }
+            switch ($categoria->nombre_cuba) {
+                case 'Superpegues':
+                case 'SuperPeque':
+                    // Algunas seeders usan 'SuperPeque' como nombre; mantener compatibilidad
+                    $data[$provincia->nombre]['superpegues'] += $resultado->cantidad;
+                    break;
+                case 'Peque':
+                    $data[$provincia->nombre]['peque'] += $resultado->cantidad;
+                    break;
+                case 'Benjamín':
+                    $data[$provincia->nombre]['benjamin'] += $resultado->cantidad;
+                    break;
+                case 'Cadete':
+                    $data[$provincia->nombre]['cadete'] += $resultado->cantidad;
+                    break;
+                case 'Junior':
+                    $data[$provincia->nombre]['junior'] += $resultado->cantidad;
+                    break;
+                case 'Senior':
+                    $data[$provincia->nombre]['senior'] += $resultado->cantidad;
+                    break;
+            }
+            $data[$provincia->nombre]['total'] += $resultado->cantidad;
+        }
+        return array_values($data);
     }
     // Función para calcular el total por categoria 
     public function totalCantidadPorCategoria() {  
-        // Obtener la penúltima edición  
-        $penultimaEdicion = Edicion::latest()->skip(1)->first();  
+        // Obtener la última edición cerrada (abierto = false)
+        $penultimaEdicion = Edicion::where('abierto', false)
+            ->orderBy('n_edicion', 'desc')
+            ->first();
 
-        // Obtener los resultados de la penúltima edición, excluyendo los que tienen categoría 7  
-        $resultados = ResultadosProvincias::whereNotNull('id_categoria')  
-            ->where('id_categoria', '!=', 7)  
-            ->where('id_edicion', $penultimaEdicion->id)  
-            ->get();  
+        // Si no hay edición cerrada, retornar totales a cero
+        $totalPorCategoria = [
+            'superpegues' => 0,
+            'peques' => 0,
+            'benjamin' => 0,
+            'cadete' => 0,
+            'junior' => 0,
+            'senior' => 0,
+            'total' => 0
+        ];
 
-        // Calcular el total de cantidad por categoría  
-        $totalPorCategoria = [  
-            'superpegues' => 0,  
-            'peques' => 0,  
-            'benjamin' => 0,  
-            'cadete' => 0,  
-            'junior' => 0,  
-            'senior' => 0,  
-            'total' => 0  
-        ];  
+        if (!$penultimaEdicion) {
+            return $totalPorCategoria;
+        }
 
-        foreach ($resultados as $resultado) {  
-            switch ($resultado->id_categoria) {  
-                case 1:  
-                    $totalPorCategoria['superpegues'] += $resultado->cantidad;  
-                    break;  
-                case 2:  
-                    $totalPorCategoria['peques'] += $resultado->cantidad;  
-                    break;  
-                case 3:  
-                    $totalPorCategoria['benjamin'] += $resultado->cantidad;  
-                    break;  
-                case 4:  
-                    $totalPorCategoria['cadete'] += $resultado->cantidad;  
-                    break;  
-                case 5:  
-                    $totalPorCategoria['junior'] += $resultado->cantidad;  
-                    break;  
-                case 6:  
-                    $totalPorCategoria['senior'] += $resultado->cantidad;  
-                    break;  
-            }  
-            $totalPorCategoria['total'] += $resultado->cantidad;  
-        }  
+        // Obtener los resultados de la edición cerrada, excluyendo los que tienen categoría 7
+        $resultados = ResultadosProvincias::whereNotNull('id_categoria')
+            ->where('id_categoria', '!=', 7)
+            ->where('id_edicion', $penultimaEdicion->id)
+            ->get();
 
-        return $totalPorCategoria;  
+        foreach ($resultados as $resultado) {
+            switch ($resultado->id_categoria) {
+                case 1:
+                    $totalPorCategoria['superpegues'] += $resultado->cantidad;
+                    break;
+                case 2:
+                    $totalPorCategoria['peques'] += $resultado->cantidad;
+                    break;
+                case 3:
+                    $totalPorCategoria['benjamin'] += $resultado->cantidad;
+                    break;
+                case 4:
+                    $totalPorCategoria['cadete'] += $resultado->cantidad;
+                    break;
+                case 5:
+                    $totalPorCategoria['junior'] += $resultado->cantidad;
+                    break;
+                case 6:
+                    $totalPorCategoria['senior'] += $resultado->cantidad;
+                    break;
+            }
+            $totalPorCategoria['total'] += $resultado->cantidad;
+        }
+
+        return $totalPorCategoria;
     }
     // Función para actualizar las fechas de la edición 
     public function marcarFechasEdicion(Request $request) {

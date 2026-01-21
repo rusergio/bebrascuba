@@ -1,4 +1,4 @@
-import { Table, Container, Title, Checkbox, Fieldset, Group, rem, Avatar, Text, Button, useMantineTheme, Badge } from '@mantine/core';
+import { Table, Container, Title, Checkbox, Fieldset, Group, rem, Avatar, Text, Button, Badge } from '@mantine/core';
 import { useEffect, useState } from 'react';
 // import classes from '../styles/FeaturesCards.module.css';
 import { IconCheck, IconX } from '@tabler/icons-react';
@@ -22,7 +22,6 @@ interface Profesor {
 }  
 export function TablaDeSolicitudes() {
     const [data, setData] = useState<Profesor[]>([]); 
-    const theme = useMantineTheme();
     const [selection, setSelection] = useState<number[]>([]); 
     const [selectedCount, setSelectedCount] = useState(0);  
     

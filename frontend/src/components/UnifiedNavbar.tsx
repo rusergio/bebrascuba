@@ -271,9 +271,9 @@ export function UnifiedNavbar() {
                                             radius="xl"
                                             size={'sm'}
                                         />
-                                        <Text fw={500} size="sm" lh={1} mr={3}>
-                                            {userName}
-                                        </Text>
+                        <Text fw={500} size="sm" lh={1} mr={3}>
+                            {userName}
+                        </Text>
                                         <IconChevronDown style={{ width: rem(12), height: rem(12) }} stroke={1.5} />
                                     </Group>
                                 </UnstyledButton>

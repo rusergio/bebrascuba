@@ -1,36 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Table, Checkbox } from '@mantine/core';
-import axios from 'axios';
-
-axios.defaults.baseURL = 'http://localhost:8000';
+import { useDataContext } from '../context/DataContext';
 
 interface Alumno {
   id: number;
   nombre_estudiante: string;
   sexo: string;
-  nombre_escuela: string;
-  grado: number;
-  categoria: string;
+  nombre_escuela: string | null;
+  grado: number | null;
+  categoria: string | null;
 }
 
 export function TablaAlumnos() {
-  const [data, setData] = useState<Alumno[]>([]);
+  // Usar datos del contexto en lugar de hacer fetch
+  const { estudiantes: data } = useDataContext();
   const [selection, setSelection] = useState<number[]>([]);
-
-  const storedLocal = localStorage.getItem('userId');
-
-  useEffect(() => {
-    const fetchAlumnos = async () => {
-      try {
-        const response = await axios.get<Alumno[]>(`/api/listar-estudiantes/${storedLocal}`);
-        setData(response.data);
-        
-      } catch (error) {
-        console.error("Error al cargar los alumnos", error);
-      }
-    };
-    fetchAlumnos();
-  }, [storedLocal]);
 
   const toggleRow = (id: number) => {
   setSelection((current) =>
@@ -60,10 +44,10 @@ export function TablaAlumnos() {
         />
       </Table.Td>
       <Table.Td>{alumno.nombre_estudiante}</Table.Td>
-      <Table.Td>{alumno.nombre_escuela}</Table.Td>
+      <Table.Td>{alumno.nombre_escuela || '—'}</Table.Td>
       <Table.Td>{alumno.sexo}</Table.Td>
-      <Table.Td>{alumno.grado}</Table.Td>
-      <Table.Td>{alumno.categoria}</Table.Td>
+      <Table.Td>{alumno.grado !== null ? alumno.grado : '—'}</Table.Td>
+      <Table.Td>{alumno.categoria || '—'}</Table.Td>
       <Table.Td>{alumno.id}</Table.Td>
     </Table.Tr>
   ));

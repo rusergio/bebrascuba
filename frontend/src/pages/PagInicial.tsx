@@ -2,42 +2,14 @@ import '@mantine/core/styles.css';
 import { MantineProvider, Container, Card, Table, Title } from '@mantine/core';
 import { HeroContentLeft } from '../components/HeroContentLeft';
 import { FeaturesCards } from '../components/FeaturesCards';
-import axios from 'axios';
-import React, { useState } from 'react';
 import { FeaturesAsymmetrical } from '../components/FeaturesAsymmetrical';
 import { FeaturesGrid } from '../components/FeaturesGrid';
 import { FeaturesTitle } from '../components/FeaturesTitle';
-
-axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
-interface ResultadosProvincia {  
-    provincia: string;  
-    superpegues: number;  
-    peque: number;  
-    benjamin: number;  
-    cadete: number;  
-    junior: number;  
-    senior: number;  
-    total: number;  
-}
+import { useDataContext } from '../context/DataContext';
 
 export default function PagInicial() { 
-    const [resultsData, setResultsData] = useState<ResultadosProvincia[]>([]); 
-    const [totalPorCategoria, setTotalPorCategoria] = React.useState<any>({});  
-    // 
-    React.useEffect(() => {  
-        const fetchData = async () => {  
-            try {  
-                const response = await axios.get('/api/resultados');  
-                setResultsData(response.data);  
-                // Obtener los totales por categoría  
-                const totalResponse = await axios.get('/api/total-categorias');  
-                setTotalPorCategoria(totalResponse.data);  
-            } catch (error) {  
-                console.error('Error fetching data:', error);  
-            }  
-        };  
-        fetchData();  
-    }, []);    
+    // Usar datos del contexto en lugar de hacer fetch
+    const { resultados: resultsData, totalPorCategoria } = useDataContext();    
     // Los resultados del concurso categoria y provincia
     const rows = resultsData.map((element) => (  
         <Table.Tr key={element.provincia}>  
@@ -68,13 +40,13 @@ export default function PagInicial() {
     const totalRow = (  
         <Table.Tr>  
             <Table.Th>Total</Table.Th>  
-            <Table.Th>{totalPorCategoria.superpegues}</Table.Th>  
-            <Table.Th>{totalPorCategoria.peques}</Table.Th>  
-            <Table.Th>{totalPorCategoria.benjamin}</Table.Th>  
-            <Table.Th>{totalPorCategoria.cadete}</Table.Th>  
-            <Table.Th>{totalPorCategoria.junior}</Table.Th>  
-            <Table.Th>{totalPorCategoria.senior}</Table.Th>  
-            <Table.Th>{totalPorCategoria.total}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.superpegues || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.peques || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.benjamin || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.cadete || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.junior || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.senior || 0}</Table.Th>  
+            <Table.Th>{totalPorCategoria?.total || 0}</Table.Th>  
         </Table.Tr>  
     );  
 

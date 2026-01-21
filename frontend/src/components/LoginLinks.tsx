@@ -16,6 +16,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { isEmail, useForm } from '@mantine/form';
 import { useUserContext } from '../context/UserContext';
+import { useDataContext } from '../context/DataContext';
 
 axios.defaults.baseURL = 'http://localhost:8000'; // Ajusta según tu configuración
 axios.defaults.withCredentials = true;
@@ -26,6 +27,7 @@ export function LoginLinks() {
     const navigate = useNavigate();
     
     const { setUser, setActiveRole } = useUserContext();
+    const { refreshEstudiantes } = useDataContext();
     // Función para loguear en el sistema
     const handleSubmit = async ( values: {correo: string; contrasenia: string }) => {
         setLoading(true);
@@ -44,6 +46,36 @@ export function LoginLinks() {
             // Guardar TODOS los roles del usuario para el selector dinámico
             const allRoles = userData.roles ? userData.roles.map((role: any) => role.rol) : [];
             localStorage.setItem('allUserRoles', JSON.stringify(allRoles));
+
+            // Guardar la metadata completa de roles (útil para permisos o ids asociados a cada rol)
+            if (userData.roles) {
+                try {
+                    localStorage.setItem('allUserRolesData', JSON.stringify(userData.roles));
+                } catch (e) {
+                    console.warn('No se pudo guardar allUserRolesData en localStorage', e);
+                }
+            }
+
+            // Guardar profesorId y datos relacionados si el backend lo retornó en userData.profesor
+            if (userData.profesor && userData.profesor.id) {
+                const profesorId = String(userData.profesor.id);
+                localStorage.setItem('profesorId', profesorId);
+                console.log('✅ profesorId guardado en localStorage:', profesorId);
+                
+                // Guardar id de la escuela si está disponible
+                if (userData.profesor.id_escuela) {
+                    const escuelaId = String(userData.profesor.id_escuela);
+                    localStorage.setItem('userSchoolId', escuelaId);
+                    console.log('✅ userSchoolId guardado en localStorage:', escuelaId);
+                }
+            } else {
+                console.warn('⚠️ El backend no retornó profesor.id en userData.profesor');
+            }
+
+            // Guardar foto de perfil si está disponible (usada en MiPerfil)
+            if (userData.foto_perfil) {
+                localStorage.setItem('userPhoto', userData.foto_perfil);
+            }
             
             // Guardar información del usuario en localStorage para persistencia
             localStorage.setItem('userRole', primaryRole);
@@ -52,7 +84,6 @@ export function LoginLinks() {
             localStorage.setItem('userLastName', userData.apellidos);
             localStorage.setItem('userEmail', userData.correo);
             localStorage.setItem('userId', userData.id.toString());
-            // localStorage.setItem('userSchoolId',userData.)
 
             // Actualizar el contexto directamente
             setUser(userData);
@@ -63,6 +94,15 @@ export function LoginLinks() {
             
             console.log('✅ Usuario logueado:', userData);
             console.log('✅ Rol activo establecido:', primaryRole);
+
+            // Cargar todos los datos después del login
+            console.log('🔄 Cargando datos del usuario...');
+            try {
+                await refreshEstudiantes();
+                console.log('✅ Datos cargados correctamente');
+            } catch (error) {
+                console.error('⚠️ Error al cargar datos iniciales:', error);
+            }
 
             navigate('/');
             // Ya no necesitamos window.location.reload() porque actualizamos el contexto directamente 

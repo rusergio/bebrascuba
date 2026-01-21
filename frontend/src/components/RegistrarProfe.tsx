@@ -148,10 +148,10 @@ export function RegistrarProfe() {
             // Datos personales
             nombre: (value) =>  
                 value.length < 3 ? 'El nombre debe tener al menos 3 letras' :  
-                /[^a-zA-Z\s]/.test(value) ? 'El nombre solo puede contener letras' : null,  
+                /[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(value) ? 'El nombre solo puede contener letras' : null,  
             apellidos: (value) =>  
                 value.length < 3 ? 'Los apellidos deben tener al menos 3 letras' :  
-                /[^a-zA-Z\s]/.test(value) ? 'Los apellidos solo pueden contener letras' : null,  
+                /[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(value) ? 'Los apellidos solo pueden contener letras' : null,  
             correo: (value) => (/^\S+@\S+$/.test(value) ? null : 'Correo electrónico inválido'),  
             telefono: (value) => {  
                 const digits = value.replace(/\D/g, ''); // Solo números  

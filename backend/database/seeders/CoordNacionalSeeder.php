@@ -30,6 +30,11 @@ class CoordNacionalSeeder extends Seeder
             $this->command->error('Los roles no existen. Ejecuta primero RolSeeder.');
             return;
         }
+        //ESTO SOLO PARA DEPURAR - COMENTADO PARA NO BORRAR DATOS DE OTRAS EDICIONES
+        // ADVERTENCIA: Si descomentas esto, borrará TODOS los estudiantes de TODAS las ediciones
+        
+        DB::table('coord_regionales')->truncate();
+
 
         $coordinadores = [
             // Edición 2022
@@ -108,7 +113,7 @@ class CoordNacionalSeeder extends Seeder
                     'correo' => 'dgalvez@uclv.edu.cu',
                     'nro_ci' => '64111222848',
                     'telefono' => '52488305',
-                    'contrasenia' => '',
+                    'contrasenia' => '1234Bebras/*-+',
                     'pin' => '4488'
                 ]),
                 'edicion_id' => $edicion2024->id,
@@ -123,7 +128,7 @@ class CoordNacionalSeeder extends Seeder
                     'apellidos' => 'Ríos Miliam',
                     'correo' => 'noname@uclv.cu',
                     'nro_ci' => '00141212345',
-                    'telefono' => '545881411234Bebras/*-+',
+                    'telefono' => '54588141',
                     'contrasenia' => '1234Bebras/*-+',
                     'pin' => '1234'
                 ]),

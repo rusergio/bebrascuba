@@ -1,31 +1,10 @@
 import { Paper, Text, Title, Button, Container, Group } from '@mantine/core';  
 import { IconDownload } from '@tabler/icons-react';  
-import { useEffect, useState } from 'react';  
-import axios from 'axios';  
-axios.defaults.baseURL = 'http://localhost:8000';  
-
-interface RecursoData {  
-    id: number;  
-    nombre: string;  
-    descripcion: string;  
-    archivo_path: string;  
-}  
+import { useDataContext } from '../context/DataContext';
 
 export function Recurso() {  
-    const [recursos, setRecursos] = useState<RecursoData[]>([]);  
-
-    useEffect(() => {  
-        const fetchRecursos = async () => {  
-        try {  
-            const response = await axios.get('api/listar-recursos');  
-            setRecursos(response.data);  
-            console.log('Recursos', response.data);  
-        } catch (error) {  
-            console.error('Error al obtener los recursos:', error);  
-        }  
-        };  
-        fetchRecursos();  
-    }, []);  
+    // Usar datos del contexto en lugar de hacer fetch
+    const { recursos } = useDataContext();  
 
     return (  
         <Container mt={50}>  

@@ -8,6 +8,7 @@ import { IMaskInput } from 'react-imask';
 import axios from 'axios';
 import { useForm } from '@mantine/form';
 import { Form } from 'react-router-dom';
+import { useDataContext } from '../context/DataContext';
 axios.defaults.baseURL = 'http://localhost:8000'; // Ajusta según tu configuración
 axios.defaults.withCredentials = true;
 
@@ -15,17 +16,21 @@ interface Alumno {
     id: number;
     nombre_estudiante: string;
     sexo: string;
-    nombre_escuela: string;
-    grado: number;
-    categoria: string;
+    nombre_escuela: string | null;
+    grado: number | null;
+    categoria: string | null;
 }
+
 export function P_Reinscribir_Alumno() {
-    const [data, setData] = useState<Alumno[]>([]);
+    // Usar datos del contexto en lugar de hacer fetch
+    const { estudiantes: data, refreshEstudiantes } = useDataContext();
+    
     const [opened, { open, close }] = useDisclosure(false);   
     const [loading, setLoading] = useState(false);
     // Error visible en el modal de inscripción
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const id_teacher = localStorage.getItem('userId');
+    // Preferir el id de la tabla `profesors` cuando esté disponible
+    const id_teacher = localStorage.getItem('profesorId') || localStorage.getItem('userId');
     const id_school = localStorage.getItem('userSchoolId');
     const [message, setMessage] = useState<String>('');
     const [selection, setSelection] = useState<number[]>([]);
@@ -35,23 +40,14 @@ export function P_Reinscribir_Alumno() {
     const municipio = localStorage.getItem('userMunicipio');
     const [editionNotice, setEditionNotice] = useState<string | null>(null);
     const [selectedCount, setSelectedCount] = useState(0);
-    // 
-    const fetchAlumnos = async () => {
-        try {
-        const response = await axios.get<Alumno[]>(`/api/listar-estudiantes/${id_teacher}`);
-        setData(response.data);
-        // Derivar escuela si no existe en localStorage
-        if (!schoolName && response.data.length > 0) {
-            setSchoolName(response.data[0].nombre_escuela || null);
-        }
-        } catch (error) {
-        console.error("Error al cargar los alumnos", error);
-        }
-    };
-    // 
+    
+    // Derivar escuela si no existe en localStorage usando datos del contexto
     useEffect(() => {
-        fetchAlumnos();
-    },[]);
+        if (!schoolName && data.length > 0 && data[0].nombre_escuela) {
+            setSchoolName(data[0].nombre_escuela);
+            localStorage.setItem('userSchoolName', data[0].nombre_escuela);
+        }
+    }, [data, schoolName]);
     // Verificar si la edición está abierta antes de abrir el modal
     const handleOpenInscribir = async () => {
         try {
@@ -88,7 +84,8 @@ export function P_Reinscribir_Alumno() {
                 id_profesor: id_teacher,
             });
             console.log("Respuesta del servidor:", response.data);
-            fetchAlumnos();
+            // Refrescar datos del contexto después de agregar
+            await refreshEstudiantes();
             setMessage('Alumno inscrito con suceso!');
             form.reset();
             
@@ -154,10 +151,10 @@ export function P_Reinscribir_Alumno() {
         if (!query) return true;
         return (
             alumno.nombre_estudiante.toLowerCase().includes(query) ||
-            alumno.nombre_escuela.toLowerCase().includes(query) ||
+            (alumno.nombre_escuela && alumno.nombre_escuela.toLowerCase().includes(query)) ||
             alumno.sexo.toLowerCase().includes(query) ||
-            String(alumno.grado).toLowerCase().includes(query) ||
-            alumno.categoria.toLowerCase().includes(query)
+            (alumno.grado !== null && String(alumno.grado).toLowerCase().includes(query)) ||
+            (alumno.categoria && alumno.categoria.toLowerCase().includes(query))
         );
     });
 
@@ -174,10 +171,10 @@ export function P_Reinscribir_Alumno() {
             />
         </Table.Td>
         <Table.Td>{alumno.nombre_estudiante}</Table.Td>
-        <Table.Td>{alumno.nombre_escuela}</Table.Td>
+        <Table.Td>{alumno.nombre_escuela || '—'}</Table.Td>
         <Table.Td>{alumno.sexo}</Table.Td>
-        <Table.Td>{alumno.grado}</Table.Td>
-        <Table.Td>{alumno.categoria}</Table.Td>
+        <Table.Td>{alumno.grado !== null ? alumno.grado : '—'}</Table.Td>
+        <Table.Td>{alumno.categoria || '—'}</Table.Td>
         {/* <Table.Td>{alumno.id}</Table.Td> */}
         </Table.Tr>
     ));

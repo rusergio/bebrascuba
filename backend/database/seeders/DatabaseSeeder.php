@@ -27,10 +27,10 @@ class DatabaseSeeder extends Seeder
         //Usuario administrador principal
         $this->call(AdminUserSeeder::class);
         //Coordinadores Nacionales de las 3 ediciones realizadas
-        // $this->call(CoordNacionalSeeder::class);
+        $this->call(CoordNacionalSeeder::class);
        
         //ELIMINAR para produccion.Usuarios de prueba. 
-        $this->call(TestUsersSeeder::class);
+        //$this->call(TestUsersSeeder::class);
 
         //Recursos de las 3 ediciones realizadas
         $this->call(RecursoSeeder::class);
@@ -41,15 +41,37 @@ class DatabaseSeeder extends Seeder
         $this->call(EscuelaVCexcelSeeder::class);
 
         //Insertar Profesores y sus escuelas de las 3 ediciones - 2022, 2023 y 2024
+
         $this->call(MaestrosEscuelasTodosSeeder::class);
-        
+        $this->command->ask('Presiona ENTER para continuar...');
+        $this->command->newLine();
+
         //Insertar Estudiantes y sus escuelas de la edición 2022
-        $this->call(E2022BEstudiantesSeeder::class);
+        $this->call(E2022bEstudiantesSeeder::class);
+        $this->command->ask('Presiona ENTER para continuar...');
+        $this->command->newLine();
+
         //Insertar Estudiantes y sus escuelas de la edición 2023
-        //$this->call(E2023EstudiantesSeeder::class);
+        $this->call(E2023bEstudiantesSeeder::class);
+        $this->command->ask('Presiona ENTER para continuar...');
+        $this->command->newLine();
+
         //Insertar Estudiantes y sus escuelas de la edición 2024
-        //$this->call(E2024EstudiantesSeeder::class);
+        $this->call(E2024bEstudiantesSeeder::class);
+        $this->command->ask('Presiona ENTER para continuar...');
+        $this->command->newLine();
 
+        //Insertar Coordinadores regionales de las 3 ediciones - 2022, 2023 y 2024
+        //OJO SOLO DE EJEMPLO
+        $this->call(CoordRegionalesSeeder::class);
 
+        //para dejar ABIERTA LA edicion DEL 2025.
+        $inicializar = $this->command->confirm('¿Inicializar EDICIÓN 4 (2025)? : ', false);
+        if ($inicializar) {
+	        $this->call(Edicion2025Seeder::class);
+	        $this->command->info('EDICIÓN 4 inicializada.');
+        } else {
+	        $this->command->warn('Saltando EDICIÓN 4.');
+        }
     }
 }

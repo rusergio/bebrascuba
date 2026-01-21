@@ -1,23 +1,32 @@
 import { Container, Title, Button, Group, rem, Grid, Text, Card, FileInputProps, Pill, FileInput, Table, Checkbox, ActionIcon, TextInput, Anchor, Modal} from '@mantine/core';
-import { Fieldset } from '@mantine/core';
 import { IconUpload, IconPencil, IconTrash, IconCheck, IconX, IconAlertCircle, IconFileTypePdf } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
+import { useDataContext } from '../context/DataContext';
 
-interface RecursoData {  
+// Tipo para el formulario (con archivo para subir)
+interface RecursoFormData {  
     id: number;
     nombre: string;  
     descripcion: string;  
     archivo: File | null;  
-    archivo_path?: string; // Campo que viene de la API
+}
+
+// Tipo del contexto (sin archivo, solo path)
+type RecursoFromContext = {
+    id: number;
+    nombre: string;
+    descripcion: string;
+    archivo_path: string;
 }
 export function GestionarRecurso() {
-    // const [selectedRows, setSelectedRows] = useState<number[]>([]);
-    const [recursos, setRecursos] = useState<RecursoData[]>([]);  
+    // Usar datos del contexto en lugar de hacer fetch
+    const { recursos, refreshRecursos } = useDataContext();
+    
     const [selection, setSelection] = useState<number[]>([]); 
     const [selectedCount, setSelectedCount] = useState(0);
     const [cargar, setCargar] = useState(false);
@@ -27,7 +36,7 @@ export function GestionarRecurso() {
     const [editModalOpen, setEditModalOpen] = useState(false);
     
     // Formulario para edición
-    const editForm = useForm<RecursoData>({  
+    const editForm = useForm<RecursoFormData>({  
         initialValues: {  
             id: 0,
             nombre: '',  
@@ -41,7 +50,7 @@ export function GestionarRecurso() {
     });
     
     // Formulario para subir un recurso
-    const form = useForm<RecursoData>({  
+    const form = useForm<RecursoFormData>({  
         initialValues: {  
             id: 0,
             nombre: '',  
@@ -53,22 +62,7 @@ export function GestionarRecurso() {
             descripcion: (value) => (value.length < 10 ? 'La descripción debe tener al menos 10 caracteres' : null),  
             archivo: (value) => (value === null ? 'Debes seleccionar un archivo' : null),  
         },  
-    });   
-
-    // Función para obtener los recursos
-    const fetchRecursos = async () => {  
-        try {  
-            const response = await axios.get('api/listar-recursos');  
-            setRecursos(response.data);  
-            console.log('Recurso', response.data);
-        } catch (error) {  
-            console.error('Error al obtener los recursos:', error);  
-        }  
-    };  
-
-    useEffect(() => {  
-        fetchRecursos();  
-    }, []);
+    });
 
     // Función para extraer el nombre del archivo de la ruta completa
     const getFileNameFromPath = (filePath: string): string => {
@@ -81,7 +75,7 @@ export function GestionarRecurso() {
     };  
 
     // Función para subir un recurso
-    const handleSubmit = async (values: RecursoData) => { 
+    const handleSubmit = async (values: RecursoFormData) => { 
         setCargar(true);
         // Validación del archivo PDF
         if (!values.archivo || !values.archivo.type.endsWith('pdf')) {
@@ -115,7 +109,7 @@ export function GestionarRecurso() {
             });
             
             console.log('Recurso creado:', response.data);
-            fetchRecursos();
+            await refreshRecursos();
             form.reset();
         
         } catch (error) {  
@@ -246,7 +240,7 @@ export function GestionarRecurso() {
           setSelectedCount(0);
           setSelection([]);
           // Volver a cargar los recursos
-          fetchRecursos();
+          await refreshRecursos();
       
         } catch (error) {
           // Notificación de error
@@ -267,7 +261,7 @@ export function GestionarRecurso() {
     };
 
     // Función para abrir el modal de edición
-    const openEditModal = (recurso: RecursoData) => {
+    const openEditModal = (recurso: RecursoFromContext) => {
         editForm.setValues({
             id: recurso.id,
             nombre: recurso.nombre,
@@ -284,7 +278,7 @@ export function GestionarRecurso() {
     };
 
     // Función para manejar la edición de recursos
-    const handleEditSubmit = async (values: RecursoData) => {
+    const handleEditSubmit = async (values: RecursoFormData) => {
         try {
             const formData = new FormData();
             formData.append('nombre', values.nombre);
@@ -310,7 +304,7 @@ export function GestionarRecurso() {
             });
             
             console.log('Recurso actualizado:', response.data);
-            fetchRecursos();
+            await refreshRecursos();
             closeEditModal();
         
         } catch (error) {  
@@ -334,7 +328,7 @@ export function GestionarRecurso() {
     };
 
     // Función para eliminar un recurso individual
-    const eliminarRecursoIndividual = (recurso: RecursoData) => {
+    const eliminarRecursoIndividual = (recurso: RecursoFromContext) => {
         modals.openConfirmModal({
             title: 'Confirmar eliminación',
             children: (
@@ -358,7 +352,7 @@ export function GestionarRecurso() {
                     });
                 
                     // Volver a cargar los recursos
-                    fetchRecursos();
+                    await refreshRecursos();
                 
                 } catch (error) {
                     // Notificación de error

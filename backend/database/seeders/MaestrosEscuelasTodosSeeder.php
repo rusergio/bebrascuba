@@ -15,6 +15,12 @@ class MaestrosEscuelasTodosSeeder extends Seeder
         $ediciones = DB::table('ediciones')->pluck('id', 'a_edicion')->toArray();
         $municipios = DB::table('municipios')->pluck('codigo', 'nombre')->toArray();
         $subsistemas = DB::table('subsistema_escuelas')->pluck('id', 'nombre')->toArray();
+        // Obtener el ID del rol "Profesor"
+        $profesorRole = DB::table('roles')->where('rol', 'Profesor')->first();
+        if (!$profesorRole) {
+            $this->command->error('Rol "Profesor" no encontrado. Ejecuta primero RoleSeeder.');
+            return;
+        }
 
         // Cargar datos desde Excel
         $rutaXlsx = __DIR__ . DIRECTORY_SEPARATOR . 'MaestrosTODOS.xlsx';
@@ -46,7 +52,8 @@ class MaestrosEscuelasTodosSeeder extends Seeder
             'usuarios_creados' => 0,
             'profesores_creados' => 0,
             'escuelas_creadas' => 0,
-            'relaciones_creadas' => 0
+            'relaciones_creadas' => 0,
+            'telefonos_actualizados' => 0
         ];
 
         for ($r = 2; $r <= $highestRow; $r++) {
@@ -55,7 +62,10 @@ class MaestrosEscuelasTodosSeeder extends Seeder
             
             // Si no hay correo, saltar
             $correo = isset($rowArr['C']) ? trim((string)$rowArr['C']) : '';
-            if ($correo === '') continue;
+            if ($correo === '') {
+                $this->command->warn("Fila $r - Sin correo, omitiendo.");
+                continue;
+            }
 
             // Extraer datos normalizados
             $item = [];
@@ -111,7 +121,18 @@ class MaestrosEscuelasTodosSeeder extends Seeder
             } else {
                 $profesorId = $profesor->id;
             }
-
+            // Asignar el rol de profesor en role_user si no está asignado
+            if (!DB::table('role_user')->where('user_id', $usuarioId)->where('rol_id', $profesorRole->id)->exists()) {
+                    DB::table('role_user')->insert([
+                        'user_id' => $usuarioId,
+                        'rol_id' => $profesorRole->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $this->command->info("Rol 'Profesor' asignado a usuario: $correo");
+            } else {
+                $this->command->info("Usuario $correo ya tiene el rol 'Profesor'");
+            }
             // 3. GESTIONAR ESCUELA
             $municipioNombre = $item['municipio_school'] ?? '';
             $subsistemaNombre = $item['subsistema_school'] ?? '';
@@ -167,7 +188,17 @@ class MaestrosEscuelasTodosSeeder extends Seeder
                 $contadores['escuelas_creadas']++;
                 $this->command->info("Escuela creada: $nombreEscuela");
             } else {
-                $escuelaId = $escuela->id;
+                $escuelaId = $escuela->id; 
+                // Actualizar teléfono de la escuela si no tiene uno y el Excel sí lo tiene
+                $telefonoExcel = $item['telefono_school'] ?? null;
+                if (is_null($escuela->telefono) && !is_null($telefonoExcel) && strlen($telefonoExcel) >= 8) {
+                    DB::table('escuelas')
+                        ->where('id', $escuelaId)
+                        ->update(['telefono' => $telefonoExcel]);
+                    
+                    $contadores['telefonos_actualizados']++;
+                    $this->command->info("Teléfono actualizado para escuela: $nombreEscuela - $telefonoExcel");
+                }
             }
 
             // 4. CREAR RELACIÓN PROFESOR-ESCUELA-EDICIÓN
@@ -197,6 +228,7 @@ class MaestrosEscuelasTodosSeeder extends Seeder
         $this->command->info("Usuarios creados: " . $contadores['usuarios_creados']);
         $this->command->info("Profesores creados: " . $contadores['profesores_creados']);
         $this->command->info("Escuelas creadas: " . $contadores['escuelas_creadas']);
+        $this->command->info("Teléfonos de escuelas actualizados: " . $contadores['telefonos_actualizados']);
         $this->command->info("Relaciones profesor-escuela-edición creadas: " . $contadores['relaciones_creadas']);
     }
 }

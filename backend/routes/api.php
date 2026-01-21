@@ -49,7 +49,7 @@ Route::get('/escuelas/{cdgo_municipio}', [EscuelaController::class, 'index'])->n
 Route::get('/profesores', [ProfesorController::class, 'index'])->name('profesores.index');
 
 // Solicitud para registrar un profesor (POST)
-Route::post('/registrar-profesor', [ProfesorController::class, 'RegistSolicProf']);
+Route::post('/registrar-profesor', [ProfesorController::class, 'registrarProfesor']);
 
 // Solicitud para actualizar un profesor (PUT)
 Route::put('/profesores/{id}', [ProfesorController::class, 'actualizar'])->name('profesores.actualizar');  
@@ -185,3 +185,17 @@ Route::get('/usuarios/multiples-roles', [UserController::class, 'listarUsuariosC
 // Solicitud para listar subsistemas
 Route::get('/listar-subsistemas', [SubsistemaController::class, 'listarSubsistemas']);
 
+
+/*
+ * @author: DGLio+DeepSeek
+ * @arg: Rutas para obtener profesores por provincia o municipio
+ * date: 2025-10-25
+ */
+// Para solicitar todos los profesores diferentes de una Provincia
+Route::get('/profesores/provincia/{id}', [ProfesorController::class, 'listarProfesoresPorProvincia']);
+
+// Para municipio
+Route::get('/profesores/municipio/{codigo}', [ProfesorController::class, 'listarProfesoresPorMunicipio']);
+
+// Para versión unificada
+Route::get('/profesores/{tipo}/{valor}', [ProfesorController::class, 'listarProfesoresRegional']);

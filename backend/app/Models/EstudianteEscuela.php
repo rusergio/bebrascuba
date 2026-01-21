@@ -15,6 +15,7 @@ class EstudianteEscuela extends Model
         'edicion',
         'id_estudiante',
         'id_escuela',
+        'id_categoria',
         'grado',
         'puntuacion',
         'medalla',

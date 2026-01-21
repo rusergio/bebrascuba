@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-class E2022bEstudiantesSeeder extends Seeder
+class E2023bEstudiantesSeeder extends Seeder
 {
     /**
      * Normaliza un nombre eliminando acentos, convirtiendo a minúsculas
@@ -96,10 +96,10 @@ class E2022bEstudiantesSeeder extends Seeder
         $mejorCoincidencia = null;
         $mejorPorcentaje = 0;
         $candidatos = [];
-
+        
         // Debug: Indicar se usa la funcion de similaridad difusa
         $this->command->info("Buscando estudiantes similares a: '{$nombre}' usando similaridad...");
-        
+
         foreach ($estudiantes as $est) {
             $similitud = $this->calcularSimilitud($nombre, $est->nombre);
             
@@ -160,8 +160,8 @@ class E2022bEstudiantesSeeder extends Seeder
             ->pluck('profesores.id', 'users.correo')
             ->toArray();
 
-        // Verificar si existe la edición del 2022
-        $anio = 2022;
+        // Verificar si existe la edición del 2023
+        $anio = 2023;
         $edicion = DB::table('ediciones')->where('a_edicion', $anio)->first();
         if ($edicion) {
             $edicionId = $edicion->id;
@@ -172,7 +172,7 @@ class E2022bEstudiantesSeeder extends Seeder
 
         // Cargar datos desde Excel externo
         // Leer el Excel desde el mismo directorio del seeder
-        $rutaXlsx = __DIR__ . DIRECTORY_SEPARATOR . 'E2022bEstudiantesDatos.xlsx';
+        $rutaXlsx = __DIR__ . DIRECTORY_SEPARATOR . 'E2023bEstudiantesDatos.xlsx';
         if (!is_file($rutaXlsx)) {
             $this->command->error("No existe el archivo Excel: $rutaXlsx");
             return;
@@ -266,15 +266,14 @@ class E2022bEstudiantesSeeder extends Seeder
                     $this->command->error("Fila $r - CI con más de 11 dígitos, se sigue con NULL: CI='$ci'");
                     $item['ci'] = null;
                 } else {
-                    // Si el CI tiene 10 dígitos, agregar un 0 al inicio
                     if (strlen($ci) === 10) {
                         $ci = '0' . $ci;
                         $this->command->info("Fila $r - CI con 10 dígitos, se adiciona 0 al inicio: $ci");
                     }
                     $item['ci'] = $ci;
-                }
+                } 
             }
-
+            
             // Mapear a claves esperadas por el seeder
             $datosEstudiantes[] = [
                 'student_name' => $studentName,
@@ -298,15 +297,15 @@ class E2022bEstudiantesSeeder extends Seeder
         $vc_cant = 0;
         $vc_ccod = 0;
         $cont_est = 0;
-        $r = 0;
+        $iteracion = 0; // Contador de iteraciones para pausa
+        
         // Procesar cada estudiante
         foreach ($datosEstudiantes as $datos) {
-            // Debug: imprimir el elemento recién agregado en formato JSON legible
-            // (muestra todo el arreglo del estudiante en la salida de consola)
-            $r++;
-            $this->command->info("DEBUG - elemento a procesar ($r):");
-            $this->command->info(json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            $iteracion++;
             
+            $this->command->info("DEBUG - elemento a procesar ($iteracion):");
+            $this->command->info(json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
             // 1. Buscar o crear el estudiante
             // Primero intenta buscar por CI si existe
             $estudiante = null;
@@ -338,7 +337,7 @@ class E2022bEstudiantesSeeder extends Seeder
 
             // 2. Buscar el profesor por correo y crear la relación profesor_estudiante
             if (!isset($profesores[$datos['teacher_email']])) {
-                $this->command->error("IGNORADO ESTUDIANTE: Profesor no encontrado con correo: " . $datos['teacher_email']);
+                $this->command->error("Profesor no encontrado con correo: " . $datos['teacher_email']);
                 continue;
             }
             $profesorId = $profesores[$datos['teacher_email']];
@@ -360,9 +359,9 @@ class E2022bEstudiantesSeeder extends Seeder
                 ]);
                 $this->command->info("La relación profesor-estudiante se ha creado para el profesor con ID $profesorId - {$datos['teacher_email']} y el estudiante con ID $estudianteId - {$datos['student_name']}.");
             } else {
-                $this->command->error("La relación profesor-estudiante ya existe para el profesor con ID $profesorId - {$datos['teacher_email']} y el estudiante con ID $estudianteId - {$datos['student_name']}.");
+                $this->command->info("La relación profesor-estudiante ya existe para el profesor con ID $profesorId - {$datos['teacher_email']} y el estudiante con ID $estudianteId - {$datos['student_name']}.");
             }
-            
+
             // 3. Buscar o crear la escuela
             if (!isset($municipios[$datos['mpio_school']])) {
                 $this->command->error("Municipio no encontrado: " . $datos['mpio_school']);
@@ -423,7 +422,28 @@ class E2022bEstudiantesSeeder extends Seeder
             }
 
             // 4. Buscar o crear la relación profesor_escuela para la edición
-            
+            /*
+             * NO ES NECESARIO: La escuela del profesor debe colocarse en el seeder del profesor
+            $profesorEscuela = DB::table('profesor_escuela')
+                ->where('edicion', $edicionId)
+                ->where('id_escuela', $escuelaId)
+                ->where('id_profesor', $profesorId)
+                ->first();
+
+            if (!$profesorEscuela) {
+                DB::table('profesor_escuela')->insert([
+                    'edicion' => $edicionId,
+                    'id_escuela' => $escuelaId,
+                    'id_profesor' => $profesorId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else  {
+                $profesorId = $profesorEscuela->id_profesor;
+                $this->command->info("La escuela '" . $datos['student_school'] . "' ya está vinculada al profesor con correo '" 
+                                    . $datos['teacher_email'] . "' para la edición $anio.");
+            }
+            */
             // 5. buscar id de la categoria
             $categoria = DB::table('categorias')
                 ->where('nombre_cuba', $datos['category'])
@@ -452,10 +472,21 @@ class E2022bEstudiantesSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
             } else {
-                $this->command->error("La relación estudiante-escuela ya existe para el estudiante con ID $estudianteId y la escuela con ID $escuelaId.");
+                $this->command->info("La relación estudiante-escuela ya existe para el estudiante con ID $estudianteId y la escuela con ID $escuelaId.");
             }
 
+            // PAUSA TEMPORAL CADA 10 ITERACIONES PARA REVISIÓN
+            //if ($iteracion % 10 === 0) {
+            //    $this->command->newLine();
+            //    $this->command->warn("═══════════════════════════════════════════════════════════════");
+            //    $this->command->warn("  PAUSA - Procesados: $iteracion de " . count($datosEstudiantes) . " estudiantes");
+            //    $this->command->warn("  Estudiantes creados: $cont_est");
+            //    $this->command->warn("═══════════════════════════════════════════════════════════════");
+            //    $this->command->ask('Presiona ENTER para continuar con los siguientes 10...');
+            //    $this->command->newLine();
+            //}
         }
+        
         $this->command->info("=== RESUMEN DE PROCESAMIENTO ===");
         $this->command->info("Total de registros procesados del Excel: " . count($datosEstudiantes));
         $this->command->info("CANTIDAD Estudiante - manual: $cont_est");
