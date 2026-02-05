@@ -24,6 +24,7 @@ import { CambiarContrasenia } from '../components/CambiarContrasenia';
 import PagUsuarios from '../pages/PagUsuarios';
 import PagTablasMunic from '../pages/PagTablasMunic';
 import PagTablasProvinc from '../pages/PagTablasProvinc';
+import PagAsignarRol from '../pages/PagAsignarRol';
 
 export const router = createBrowserRouter([  
     {  
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
             { path: "/cambiar-clave", element: <CambiarClave /> },
             { path: "/cambiar-contrasenia", element: <CambiarContrasenia /> },
             { path: "/usuarios", element: <PagUsuarios /> },
+            { path: "/asignar-rol", element: <PagAsignarRol /> },
             { path: "/pag-munic/*", element: <PagTablasMunic /> },
             { path: "/pag-provinc/*", element: <PagTablasProvinc /> },
             { path: "/pag-gest-alumnos/*", element: <PagGestionAlumnos />},

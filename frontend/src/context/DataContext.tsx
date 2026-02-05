@@ -69,17 +69,39 @@ interface RecursoData {
     archivo_path: string;
 }
 
+interface SolicitudProfesor {
+    id: number;
+    nro_ci: string;
+    nombre: string;
+    apellidos: string;
+    correo: string;
+    telefono: string;
+    es_nuevo: boolean;
+    perfil_editado: boolean;
+    esta_activo: boolean;
+    nombre_escuela: string;
+    subsistema: string;
+    poblado: string;
+    telefono_escuela: string | null;
+}
+
 interface DataContextType {
     estudiantes: Alumno[];
     totalEstudiantes: number;
     resultados: ResultadosProvincia[];
     totalPorCategoria: TotalPorCategoria | null;
     recursos: RecursoData[];
+    solicitudes: SolicitudProfesor[];
+    numeroEdicion: number;
+    estadoEdicion: string; // 'Abierto' o 'Cerrado'
     isLoading: boolean;
     isInitialized: boolean;
     refreshEstudiantes: () => Promise<void>;
     refreshResultados: () => Promise<void>;
     refreshRecursos: () => Promise<void>;
+    refreshSolicitudes: () => Promise<void>;
+    refreshNumeroEdicion: () => Promise<void>;
+    refreshEstadoEdicion: () => Promise<void>;
     clearAllData: () => void;
 }
 
@@ -91,6 +113,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [resultados, setResultados] = useState<ResultadosProvincia[]>([]);
     const [totalPorCategoria, setTotalPorCategoria] = useState<TotalPorCategoria | null>(null);
     const [recursos, setRecursos] = useState<RecursoData[]>([]);
+    const [solicitudes, setSolicitudes] = useState<SolicitudProfesor[]>([]);
+    const [numeroEdicion, setNumeroEdicion] = useState<number>(0);
+    const [estadoEdicion, setEstadoEdicion] = useState<string>("Cerrado");
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
 
@@ -162,17 +187,59 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    // Función para cargar número de edición
+    const loadNumeroEdicion = useCallback(async () => {
+        try {
+            console.log('🔄 Cargando número de edición al iniciar la app...');
+            const response = await axios.get<{ n_edicion: number }>('/api/nro_edicion');
+            setNumeroEdicion(response.data.n_edicion);
+            console.log('✅ Número de edición cargado:', response.data.n_edicion);
+        } catch (error) {
+            console.error('❌ Error al cargar número de edición:', error);
+            setNumeroEdicion(0);
+        }
+    }, []);
+
+    // Función para cargar solicitudes de profesores
+    const loadSolicitudes = useCallback(async () => {
+        try {
+            console.log('🔄 Cargando solicitudes de profesores al iniciar la app...');
+            const response = await axios.get<SolicitudProfesor[]>('/api/profesores-inactivos');
+            setSolicitudes(response.data);
+            console.log('✅ Solicitudes cargadas:', response.data.length);
+        } catch (error) {
+            console.error('❌ Error al cargar solicitudes:', error);
+            setSolicitudes([]);
+        }
+    }, []);
+
+    // Función para cargar estado de la edición
+    const loadEstadoEdicion = useCallback(async () => {
+        try {
+            console.log('🔄 Cargando estado de la edición al iniciar la app...');
+            const response = await axios.get<{ is_open: boolean }>('/api/is-open');
+            setEstadoEdicion(response.data.is_open ? 'Abierto' : 'Cerrado');
+            console.log('✅ Estado de edición cargado:', response.data.is_open ? 'Abierto' : 'Cerrado');
+        } catch (error) {
+            console.error('❌ Error al cargar estado de edición:', error);
+            setEstadoEdicion('Cerrado');
+        }
+    }, []);
+
     // Cargar todos los datos cuando hay un usuario logueado o siempre (para datos públicos)
     useEffect(() => {
         const userId = localStorage.getItem('userId');
         const profesorId = localStorage.getItem('profesorId');
         
-        // Cargar datos públicos siempre (resultados y recursos)
-        console.log('🚀 Cargando datos públicos (resultados y recursos)...');
+        // Cargar datos públicos siempre (resultados, recursos, solicitudes, número de edición y estado de edición)
+        console.log('🚀 Cargando datos públicos (resultados, recursos, solicitudes, número de edición y estado de edición)...');
         Promise.all([
             loadResultados(),
             loadTotalPorCategoria(),
-            loadRecursos()
+            loadRecursos(),
+            loadSolicitudes(),
+            loadNumeroEdicion(),
+            loadEstadoEdicion()
         ]).then(() => {
             // Solo cargar estudiantes si hay usuario logueado
             if (userId || profesorId) {
@@ -185,7 +252,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }).catch(() => {
             setIsInitialized(true);
         });
-    }, [loadEstudiantes, loadResultados, loadTotalPorCategoria, loadRecursos]);
+    }, [loadEstudiantes, loadResultados, loadTotalPorCategoria, loadRecursos, loadSolicitudes, loadNumeroEdicion, loadEstadoEdicion]);
 
     // Función para refrescar estudiantes (útil después de agregar/eliminar)
     const refreshEstudiantes = useCallback(async () => {
@@ -202,6 +269,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         await loadRecursos();
     }, [loadRecursos]);
 
+    // Función para refrescar solicitudes
+    const refreshSolicitudes = useCallback(async () => {
+        await loadSolicitudes();
+    }, [loadSolicitudes]);
+
+    // Función para refrescar número de edición
+    const refreshNumeroEdicion = useCallback(async () => {
+        await loadNumeroEdicion();
+    }, [loadNumeroEdicion]);
+
+    // Función para refrescar estado de la edición
+    const refreshEstadoEdicion = useCallback(async () => {
+        await loadEstadoEdicion();
+    }, [loadEstadoEdicion]);
+
     // Limpiar todos los datos (útil al hacer logout)
     const clearAllData = useCallback(() => {
         setEstudiantes([]);
@@ -209,6 +291,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setResultados([]);
         setTotalPorCategoria(null);
         setRecursos([]);
+        setSolicitudes([]);
+        setNumeroEdicion(0);
+        setEstadoEdicion('Cerrado');
         setIsInitialized(false);
     }, []);
 
@@ -220,11 +305,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 resultados,
                 totalPorCategoria,
                 recursos,
+                solicitudes,
+                numeroEdicion,
+                estadoEdicion,
                 isLoading,
                 isInitialized,
                 refreshEstudiantes,
                 refreshResultados,
                 refreshRecursos,
+                refreshSolicitudes,
+                refreshNumeroEdicion,
+                refreshEstadoEdicion,
                 clearAllData,
             }}
         >

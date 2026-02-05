@@ -1,41 +1,18 @@
 import { Table, Container, Title, Checkbox, Fieldset, Group, rem, Avatar, Text, Button, useMantineTheme, Badge } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 // import classes from '../styles/FeaturesCards.module.css';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import axios from 'axios';
+import { useDataContext } from '../context/DataContext';
 axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
 
-interface Profesor {  
-    id: number;  
-    nro_ci: string;  
-    nombre: string;  
-    apellidos: string;  
-    correo: string;  
-    telefono: string;  
-    es_nuevo: boolean;  
-    perfil_editado: boolean;  
-    esta_activo: boolean;  
-    nombre_escuela: string;  
-    subsistema: string;  
-    poblado: string;  
-    telefono_escuela: string | null;  
-}  
 export function SolitudesACoordNac() {
-    const [data, setData] = useState<Profesor[]>([]); 
+    // Usar datos del contexto en lugar de hacer fetch
+    const { solicitudes: data, refreshSolicitudes } = useDataContext();
+    
     const theme = useMantineTheme();
     const [selection, setSelection] = useState<number[]>([]); 
-    const [selectedCount, setSelectedCount] = useState(0);  
-    
-    // Método para listar los profesores inactivos 
-    const listarProfesoresInactivos = async () => {  
-      try {  
-        const response = await axios.get<Profesor[]>('api/profesores-inactivos');  
-        setData(response.data);  
-        console.log(response.data);  
-      } catch (error) {  
-        console.error('Error al obtener los profesores inactivos:', error);  
-      }  
-    };
+    const [selectedCount, setSelectedCount] = useState(0);
     // Método para aceptar un o mas solicitudes 
     const aceptarSolicitudes = async () => {  
         try {  
@@ -48,18 +25,14 @@ export function SolitudesACoordNac() {
             }  
             setSelectedCount(0);  
             setSelection([]);  
-            listarProfesoresInactivos();  
+            await refreshSolicitudes();  
         } catch (error) {  
           console.error('Error al aceptar la solicitud:', error);  
           if (axios.isAxiosError(error)) {  
               console.error('Respuesta del servidor:', error.response?.data);  
           }  
         }  
-    };
-
-    useEffect(() => {  
-        listarProfesoresInactivos();  
-    }, []); 
+    }; 
     // 
     const toggleRow = (id: number) => {  
       setSelection((current) => {  

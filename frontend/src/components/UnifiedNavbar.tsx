@@ -1,6 +1,6 @@
 import { Group, Burger, Container, rem, Menu, UnstyledButton, Text, Title, Avatar, Center, Collapse } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconStar, IconChevronDown, IconLogout, IconClipboardText, IconEyeglass, IconUser, IconUserShare, IconEyeSearch, IconUsersGroup, IconBuilding, IconClipboardList, IconFileTypeDoc, IconMessage, IconAdjustments, IconUserPlus, IconUsersPlus, IconFileDescription, IconUserEdit } from '@tabler/icons-react';
+import { IconStar, IconChevronDown, IconLogout, IconClipboardText, IconEyeglass, IconUser, IconUserShare, IconEyeSearch, IconUsersGroup, IconBuilding, IconClipboardList, IconFileTypeDoc, IconMessage, IconUserPlus, IconUsersPlus, IconFileDescription, IconUserEdit } from '@tabler/icons-react';
 import classes from '../styles/NavbarStyles.module.css';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -73,7 +73,7 @@ const roleSpecificLinks = {
                 { link: '/gestionar_concurso', label: 'Edición', icon: IconClipboardList },
                 { link: '/gestor-recurso', label: 'Recursos', icon: IconFileTypeDoc },
                 { link: '/solicitudes', label: 'Solicitudes', icon: IconMessage },
-                { link: '/configuracion', label: 'Configuración', icon: IconAdjustments },
+                // { link: '/configuracion', label: 'Configuración', icon: IconAdjustments },
             ],
         },
     ],
@@ -83,7 +83,7 @@ const roleSpecificLinks = {
             label: 'Administrar Cuentas',
             links: [
                 { link: '/admin_concurso', label: 'Registrar nuevo usuario', icon: IconUserPlus },
-                { link: '/admin_concurso', label: 'Asignar rol', icon: IconUserShare },
+                { link: '/asignar-rol', label: 'Asignar rol', icon: IconUserShare },
                 { link: '/usuarios', label: 'Ver usuarios registrados', icon: IconEyeSearch },
             ],
         },

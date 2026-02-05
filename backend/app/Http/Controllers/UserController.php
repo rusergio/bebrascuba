@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Models\Edicion;
 use App\Models\Rol;
 use App\Models\RoleUser;
+use App\Models\Profesor;
+use App\Models\Escuela;
 
 class UserController extends Controller
 {
@@ -600,6 +602,67 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Error al cerrar sesiÃ³n',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Listar todos los usuarios con sus roles y número de escuela (si es profesor)
+     * @author: Sistema
+     */
+    public function listarTodosUsuarios()
+    {
+        try {
+            // Obtener todos los usuarios con sus roles
+            $usuarios = User::with('roles')->get();
+
+            // Transformar los datos
+            $usuariosTransformados = $usuarios->map(function ($user) {
+                // Obtener roles del usuario
+                $roles = $user->roles->map(function ($rol) {
+                    return $rol->rol;
+                })->toArray();
+                
+                // Obtener número de escuela si es profesor
+                $codigoEscuela = null;
+                $profesor = Profesor::where('user_id', $user->id)->first();
+                
+                if ($profesor) {
+                    // Obtener la escuela del profesor desde profesor_escuela
+                    $profesorEscuela = DB::table('profesor_escuela')
+                        ->where('id_profesor', $profesor->id)
+                        ->whereNull('deleted_at')
+                        ->orderBy('edicion', 'desc')
+                        ->first();
+                    
+                    if ($profesorEscuela) {
+                        $escuela = Escuela::find($profesorEscuela->id_escuela);
+                        if ($escuela) {
+                            $codigoEscuela = $escuela->codigo;
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'apellidos' => $user->apellidos,
+                    'correo' => $user->correo,
+                    'telefono' => $user->telefono,
+                    'roles' => $roles,
+                    'codigo_escuela' => $codigoEscuela,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuariosTransformados
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al listar usuarios: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -72,10 +72,8 @@ export function MiPerfil() {
         // Notificar a otros componentes/pestañas que el localStorage cambió
         window.dispatchEvent(new Event('localStorageUpdate'));
 
-        // Recargar la página para aplicar cambios de UI (barra de navegación, permisos, etc.)
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
+        // La barra de navegación se actualizará automáticamente a través del contexto
+        // No es necesario recargar la página
     };
 
     // Preparar datos para el selector de roles
@@ -286,25 +284,21 @@ export function MiPerfil() {
                                 radius={120}
                                 mx="auto"
                                 alt="Foto de perfil"
-                                // color='dark'
                             />
-                            <Text ta="center" fz="h4" fw={500} mt="md">
-                                {localStorage.getItem('userName')} {localStorage.getItem('userLastName')}
-                            </Text>
-                            
+                            <Text ta="center" fz="h4" fw={500} mt="md">{localStorage.getItem('userName')} {localStorage.getItem('userLastName')}</Text>
+                            <Text size='sm' ta="center" c="dimmed" >{localStorage.getItem('userEmail')}</Text>
                             {/* Selector de rol dinámico */}
                             {allRoles.length > 1 ? (
-                                <Group justify="center" >
+                                <Group justify="center" mt="sm">
                                     <Select
-                                        withAsterisk
-                                        
+                                        w="70%"
+                                        maw={340}
                                         description="Rol activo"
                                         placeholder="Selecciona un rol"
                                         value={activeRole || updateRol}
                                         onChange={handleRoleChange}
                                         data={roleOptions}
                                         leftSection={<IconUserCheck size={16} />}
-                                        
                                     />
                                 </Group>
                             ) : (
@@ -330,7 +324,7 @@ export function MiPerfil() {
                                 </Group>
                             )}
                             
-                            <Text size='sm' ta="center" c="dimmed" >{localStorage.getItem('userEmail')}</Text>
+                            
                             {/* <Group justify="center" mt={10}>
                                 <FileButton
                                     onChange={(selectedFile) => {

@@ -33,6 +33,8 @@ class VerifyCsrfToken extends Middleware
         'api/comprobar-pin', 
         'api/enviar-link-registro', 
         'api/eliminar-recurso/*', 
-        'api/recursos/*'
+        'api/recursos/*',
+        'api/usuarios/*/roles',
+        'api/registrar-escuela'
     ];
 }

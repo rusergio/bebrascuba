@@ -5,20 +5,22 @@ import classes from '../styles/FeaturesCards.module.css';
 import { DateInput, DatePickerInput } from '@mantine/dates';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useForm } from '@mantine/form';
+import { useDataContext } from '../context/DataContext';
 axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
 
 dayjs.extend(customParseFormat);
 
 export function GestionarConcurso() {
+    // Usar datos del contexto en lugar de hacer fetch
+    const { numeroEdicion, estadoEdicion, refreshNumeroEdicion, refreshEstadoEdicion } = useDataContext();
+    
     const [statusMessage, setStatusMessage] = useState('');
     const [error, setError] = useState<String | null>('');
     const [loading, setLoading] = useState(false);
     const [cargar, setCargar] = useState(false);
-    const [estadoActual, setEstadoActual] = useState<string>("Cerrado"); // Inicialmente cerrado
-    const [numeroEdicion, setNumeroEdicion] = useState<number>(0);
     
     // Método para cambiar el estado de la edición
     const handleStatusChange = async (value: string | null) => {
@@ -32,9 +34,12 @@ export function GestionarConcurso() {
                 ? await axios.post('api/ediciones/abrir')
                 : await axios.post('api/ediciones/cerrar');
             
-            // Solo actualizar el estado si la respuesta es exitosa
-            setEstadoActual(value);
-            fetchNumeroEdicion();
+            // Actualizar el contexto después de cambiar el estado
+            await Promise.all([
+                refreshNumeroEdicion(),
+                refreshEstadoEdicion()
+            ]);
+            
             setStatusMessage(response.data.message);
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -49,25 +54,6 @@ export function GestionarConcurso() {
             setLoading(false);
         }
     };
-    // Método para obtener el número de edición
-    const fetchNumeroEdicion = async () => {
-        try {
-            const response = await axios.get('api/nro_edicion'); // Asegúrate de que la ruta coincida con tu backend
-            setNumeroEdicion(response.data.n_edicion);
-        } catch (error) {
-            console.error("Error al obtener el número de edición:", error);
-            setNumeroEdicion(0); // Valor por defecto si falla
-        }
-    };
-    // Método para obtener el estado inicial de la edición
-    const fetchEstadoInicial = async () => {
-        const response = await axios.get('api/is-open');
-        setEstadoActual(response.data.is_open ? 'Abierto' : 'Cerrado');
-    };
-    useEffect(() => {
-        fetchEstadoInicial();
-        fetchNumeroEdicion();
-    }, []);
     // Método para marcar fechas importantes 
     const handleEditionDate =  async() => {
         setLoading(true); // Iniciar el estado de carga
@@ -166,7 +152,7 @@ export function GestionarConcurso() {
                             target="_blank"
                             withBorder
                         >
-                            <Title order={3}> {numeroEdicion-1}ª Edición de BebrasCuba </Title>
+                            <Title order={3}> {numeroEdicion > 0 ? numeroEdicion - 1 : ''}ª Edición de BebrasCuba </Title>
                             <Text c={'gray'} mb={5} fw={300} size='sm'>Planifique la edición</Text>
                             
                             <Grid>
@@ -174,10 +160,10 @@ export function GestionarConcurso() {
                                 <Group align="center" mb="sm" gap="xs">
                                     <Text fw={500}>Estado de la edición:</Text>
                                     <Badge
-                                        color={estadoActual === "Abierto" ? "blue" : "red"}
-                                        leftSection={estadoActual === "Abierto" ? <IconCheck size={14}  /> : <IconX size={14} />}
+                                        color={estadoEdicion === "Abierto" ? "blue" : "red"}
+                                        leftSection={estadoEdicion === "Abierto" ? <IconCheck size={14}  /> : <IconX size={14} />}
                                     >
-                                        {estadoActual}
+                                        {estadoEdicion}
                                     </Badge>
                                 </Group>
                                 <Select
@@ -185,7 +171,7 @@ export function GestionarConcurso() {
                                         { value: 'Abierto', label: 'Abrir edición' },
                                         { value: 'Cerrado', label: 'Cerrar edición' }
                                     ]}
-                                    value={estadoActual} // Muestra el estado actual
+                                    value={estadoEdicion} // Muestra el estado actual del contexto
                                     rightSectionPointerEvents="none"
                                     rightSection={icon}
                                     label="Cambie el estado de la edición"

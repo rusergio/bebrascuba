@@ -176,6 +176,8 @@ Route::get('/usuarios/no-profesores', [UserController::class, 'listarUsuariosNoP
 Route::get('/usuarios/profesores', [UserController::class, 'listarProfesores']);
 // Solicitud para listar usuarios que tienen múltiples roles
 Route::get('/usuarios/multiples-roles', [UserController::class, 'listarUsuariosConMultiplesRoles']);
+// Solicitud para listar todos los usuarios con roles y número de escuela
+Route::get('/usuarios/todos', [UserController::class, 'listarTodosUsuarios']);
 
 /**
  * @arg: Solicituds para [Subsistema]
