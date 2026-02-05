@@ -38,8 +38,8 @@ export function PiePagina() {
                             </Anchor>
                         </Group>  
                         <Group align="center">  
-                            <Anchor href="https://mantine.dev/" target="_blank" underline="hover">
-                            <span className={classes.highlight}>Geobebras</span> - Sitio geo-espacial de BebrasCuba
+                            <Anchor href="https://www.mined.gob.cu/" target="_blank" underline="hover">
+                            <span className={classes.highlight}>MINED</span> - Sitio de ministerio de educacion cubano
                             </Anchor> 
                         </Group>  
                         <Group align="center">  

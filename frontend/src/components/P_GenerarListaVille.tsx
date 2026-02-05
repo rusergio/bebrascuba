@@ -366,11 +366,11 @@ export function P_GenerarListaVille() {
                                 {tablasGeneradas.map((grupo) => (
                                     <Card key={grupo.key} withBorder p="md">
                                         <Title order={4} mb="md">{grupo.label}</Title>
-                                        <Table stickyHeader stickyHeaderOffset={60}>
+                                        <Table stickyHeader stickyHeaderOffset={60} highlightOnHover>
                                             <Table.Thead>
                                                 <Table.Tr>
                                                     {columnasSeleccionadas.map((col) => (
-                                                        <Table.Th key={col}>{col}</Table.Th>
+                                                        <Table.Th key={col} style={{ padding: '12px 16px' }}>{col}</Table.Th>
                                                     ))}
                                                 </Table.Tr>
                                             </Table.Thead>
@@ -390,7 +390,7 @@ export function P_GenerarListaVille() {
                                                                     contenido = estudiante.grado?.toString() || '-';
                                                                     break;
                                                             }
-                                                            return <Table.Td key={col}>{contenido}</Table.Td>;
+                                                            return <Table.Td key={col} style={{ padding: '12px 16px' }}>{contenido}</Table.Td>;
                                                         })}
                                                     </Table.Tr>
                                                 ))}
