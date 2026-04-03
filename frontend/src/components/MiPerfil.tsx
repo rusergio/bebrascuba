@@ -1,11 +1,13 @@
-import { Avatar, Container, Grid, Input, Paper, PasswordInput, PinInput, Switch, Tabs, TextInput, Title, Select, Group, Badge } from '@mantine/core';
+import { Avatar, Container, Grid, Input, Paper, PasswordInput, PinInput, Switch, Tabs, TextInput, Title, Select, Group, Badge, FileButton, ActionIcon, Modal, Slider, Stack } from '@mantine/core';
 import { Card, Text, Button } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
-import { IconAt, IconDeviceMobile, IconEyeClosed, IconEyeFilled, IconLock, IconLockCheck, IconLockCog, IconPasswordMobilePhone, IconPasswordUser, IconRefresh, IconUserCheck } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { IconAt, IconDeviceMobile, IconEyeClosed, IconEyeFilled, IconLock, IconLockCheck, IconLockCog, IconPasswordMobilePhone, IconPasswordUser, IconRefresh, IconUserCheck, IconPhoto, IconCheck } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios'; 
 import { IMaskInput } from 'react-imask';
 import { useUserContext, useUserRoles } from '../context/UserContext';
+import Cropper, { Area } from 'react-easy-crop';
 axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
 
 
@@ -24,9 +26,18 @@ export function MiPerfil() {
     const [loadingTelefono, setLoadingTelefono] = useState(false);
     const [loadingCorreo, setLoadingCorreo] = useState(false);
     const [loadingPin, setLoadingPin] = useState(false);
+    const [loadingPhoto, setLoadingPhoto] = useState(false);
     // Preferir id de la tabla profesores si está disponible
     const id_profesor = localStorage.getItem('profesorId') || localStorage.getItem('userId');
+    const userId = localStorage.getItem('userId');
     const [currentPhoto, setCurrentPhoto] = useState<string | null>(localStorage.getItem('userPhoto') || null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
     useEffect(() => {
         // Obtener el rol del localStorage dinámicamente
@@ -35,11 +46,257 @@ export function MiPerfil() {
           setUpdateRol(storedRole);
         }
         
-        // Cargar foto actual si existe
-        if (localStorage.getItem('userPhoto')) {
-          setCurrentPhoto(localStorage.getItem('userPhoto'));
+        // Cargar foto actual del usuario desde el backend
+        const loadUserPhoto = async () => {
+            if (userId) {
+                try {
+                    console.log('🔄 Cargando foto del usuario:', userId);
+                    const response = await axios.get(`/api/usuarios/${userId}/foto-perfil`);
+                    console.log('📸 Respuesta del backend:', response.data);
+                    
+                    if (response.data.success && response.data.photo_url) {
+                        let photoUrl = response.data.photo_url;
+                        
+                        // Si la URL viene con /storage/storage/, corregirla
+                        if (photoUrl && photoUrl.includes('/storage/storage/')) {
+                            photoUrl = photoUrl.replace('/storage/storage/', '/storage/');
+                        }
+                        
+                        console.log('📸 URL de foto:', photoUrl);
+                        setCurrentPhoto(photoUrl);
+                        localStorage.setItem('userPhoto', photoUrl);
+                    } else {
+                        console.log('⚠️ No hay foto en el backend, usando localStorage');
+                        // Si no hay foto en el backend, intentar cargar desde localStorage
+                        const userPhoto = localStorage.getItem('userPhoto');
+                        if (userPhoto) {
+                            setCurrentPhoto(userPhoto);
+                        }
+                    }
+                } catch (error: any) {
+                    console.error('❌ Error al cargar foto:', error);
+                    // Si falla, intentar cargar desde localStorage
+                    const userPhoto = localStorage.getItem('userPhoto');
+                    if (userPhoto) {
+                        setCurrentPhoto(userPhoto);
+                    }
+                }
+            } else {
+                console.log('⚠️ No hay userId, usando localStorage');
+                // Si no hay userId, cargar desde localStorage
+                const userPhoto = localStorage.getItem('userPhoto');
+                if (userPhoto) {
+                    setCurrentPhoto(userPhoto);
+                }
+            }
+        };
+        
+        loadUserPhoto();
+    }, [userId]);
+
+    // Debug: Log cuando cambia currentPhoto
+    useEffect(() => {
+        if (currentPhoto) {
+            console.log('🔍 currentPhoto actualizado:', currentPhoto);
         }
+    }, [currentPhoto]);
+
+    // Función para manejar la selección de archivo
+    const handleFileSelect = (file: File | null) => {
+        if (file) {
+            const previewUrl = URL.createObjectURL(file);
+            setImageToCrop(previewUrl);
+            setCropModalOpen(true);
+        }
+    };
+
+    // Función para crear la imagen recortada
+    const createImage = (url: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.addEventListener('load', () => resolve(image));
+            image.addEventListener('error', (error) => reject(error));
+            image.src = url;
+        });
+    };
+
+    // Función para obtener la imagen recortada como blob
+    const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
+        const image = await createImage(imageSrc);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            throw new Error('No se pudo obtener el contexto 2d');
+        }
+
+        const maxSize = Math.max(image.width, image.height);
+        const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+        canvas.width = safeArea;
+        canvas.height = safeArea;
+
+        ctx.translate(safeArea / 2, safeArea / 2);
+        ctx.translate(-safeArea / 2, -safeArea / 2);
+
+        ctx.drawImage(
+            image,
+            safeArea / 2 - image.width * 0.5,
+            safeArea / 2 - image.height * 0.5
+        );
+
+        const data = ctx.getImageData(0, 0, safeArea, safeArea);
+
+        canvas.width = pixelCrop.width;
+        canvas.height = pixelCrop.height;
+
+        ctx.putImageData(
+            data,
+            Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
+            Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+        );
+
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                }
+            }, 'image/jpeg', 0.9);
+        });
+    };
+
+    // Función para manejar el cambio de crop
+    const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
     }, []);
+
+    // Función para aplicar el recorte
+    const handleApplyCrop = async () => {
+        if (!imageToCrop || !croppedAreaPixels) {
+            return;
+        }
+
+        try {
+            const croppedImage = await getCroppedImg(imageToCrop, croppedAreaPixels);
+            const file = new File([croppedImage], 'profile-photo.jpg', { type: 'image/jpeg' });
+            
+            setSelectedFile(file);
+            const previewUrl = URL.createObjectURL(croppedImage);
+            setPreview(previewUrl);
+            
+            // Cerrar modal y limpiar
+            setCropModalOpen(false);
+            if (imageToCrop) {
+                URL.revokeObjectURL(imageToCrop);
+            }
+            setImageToCrop(null);
+        } catch (error) {
+            notifications.show({
+                title: 'Error',
+                message: 'Error al procesar la imagen',
+                color: 'red',
+            });
+        }
+    };
+
+    // Función para cancelar el recorte
+    const handleCancelCrop = () => {
+        setCropModalOpen(false);
+        if (imageToCrop) {
+            URL.revokeObjectURL(imageToCrop);
+        }
+        setImageToCrop(null);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setCroppedAreaPixels(null);
+    };
+
+    // Función para subir la foto
+    const handleUploadPhoto = async () => {
+        if (!selectedFile || !userId) {
+            notifications.show({
+                title: 'Error',
+                message: 'Por favor selecciona una imagen',
+                color: 'red',
+            });
+            return;
+        }
+
+        setLoadingPhoto(true);
+        try {
+            const formData = new FormData();
+            formData.append('foto_perfil', selectedFile);
+
+            const response = await axios.post(`/api/usuarios/${userId}/foto-perfil`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.data.success) {
+                console.log('✅ Respuesta del servidor:', response.data);
+                
+                // Obtener la URL de la foto (usar photo_url si está disponible, sino path)
+                let photoUrl = response.data.photo_url || response.data.path;
+                
+                console.log('📸 URL recibida:', photoUrl);
+                
+                // Si no hay URL completa, construirla
+                if (photoUrl && !photoUrl.startsWith('http') && !photoUrl.startsWith('/storage')) {
+                    photoUrl = photoUrl.startsWith('storage/') 
+                        ? `http://localhost:8000/${photoUrl}` 
+                        : `http://localhost:8000/storage/${photoUrl}`;
+                }
+                
+                // Si la URL viene con /storage/storage/, corregirla
+                if (photoUrl && photoUrl.includes('/storage/storage/')) {
+                    photoUrl = photoUrl.replace('/storage/storage/', '/storage/');
+                }
+                
+                console.log('📸 URL final:', photoUrl);
+                
+                // Actualizar estado y localStorage
+                setCurrentPhoto(photoUrl);
+                localStorage.setItem('userPhoto', photoUrl);
+                localStorage.setItem('userFotoPerfil', response.data.foto_perfil);
+                
+                console.log('💾 Guardado en localStorage:', photoUrl);
+                
+                // Notificar a otros componentes que la foto cambió
+                window.dispatchEvent(new Event('userPhotoUpdated'));
+
+                notifications.show({
+                    title: 'Éxito',
+                    message: response.data.message || 'Foto de perfil actualizada correctamente',
+                    color: 'green',
+                });
+
+                // Limpiar preview y archivo seleccionado
+                setSelectedFile(null);
+                if (preview) {
+                    URL.revokeObjectURL(preview);
+                }
+                setPreview(null);
+            }
+        } catch (error: any) {
+            notifications.show({
+                title: 'Error',
+                message: error.response?.data?.message || 'Error al subir la foto',
+                color: 'red',
+            });
+        } finally {
+            setLoadingPhoto(false);
+        }
+    };
+
+    // Función para cancelar la selección
+    const handleCancelPhoto = () => {
+        setSelectedFile(null);
+        if (preview) {
+            URL.revokeObjectURL(preview);
+        }
+        setPreview(null);
+    };
 
     // Función para manejar el cambio de rol
     const handleRoleChange = (newRole: string | null) => {
@@ -279,12 +536,23 @@ export function MiPerfil() {
                     <Grid.Col span={5}>
                         <Paper radius="md" withBorder p="lg" bg="var(--mantine-color-body)">
                             <Avatar
-                                src={currentPhoto}
+                                src={preview || currentPhoto || undefined}
                                 size={120}
                                 radius={120}
                                 mx="auto"
                                 alt="Foto de perfil"
-                            />
+                                onError={(e) => {
+                                    console.error('❌ Error al cargar imagen del Avatar:', e);
+                                    console.log('📸 URL que falló:', preview || currentPhoto);
+                                }}
+                            >
+                                {!preview && !currentPhoto && (
+                                    <Text size="xl" fw={700}>
+                                        {localStorage.getItem('userName')?.charAt(0).toUpperCase() || 'U'}
+                                        {localStorage.getItem('userLastName')?.charAt(0).toUpperCase() || ''}
+                                    </Text>
+                                )}
+                            </Avatar>
                             <Text ta="center" fz="h4" fw={500} mt="md">{localStorage.getItem('userName')} {localStorage.getItem('userLastName')}</Text>
                             <Text size='sm' ta="center" c="dimmed" >{localStorage.getItem('userEmail')}</Text>
                             {/* Selector de rol dinámico */}
@@ -307,9 +575,9 @@ export function MiPerfil() {
                             
                             {/* Mostrar badges de todos los roles */}
                             {allRoles.length > 1 && (
-                                <Group justify="center" mt="xs">
-                                    <Text size="xs" c="dimmed">Roles disponibles:</Text>
-                                    <Group gap="xs">
+                                <Stack align="center" gap="xs" mt="xs">
+                                    <Text size="xs" c="dimmed" ta="center">Roles disponibles:</Text>
+                                    <Group gap="xs" justify="center">
                                         {allRoles.map((role, index) => (
                                             <Badge 
                                                 key={index} 
@@ -321,78 +589,49 @@ export function MiPerfil() {
                                             </Badge>
                                         ))}
                                     </Group>
-                                </Group>
+                                </Stack>
                             )}
                             
-                            
-                            {/* <Group justify="center" mt={10}>
+                            <Group justify="center" mt={10}>
                                 <FileButton
-                                    onChange={(selectedFile) => {
-                                    if (selectedFile) {
-                                        setFile(selectedFile);
-                                        setPreview(URL.createObjectURL(selectedFile));
-                                        setErrorPhoto(null);
-                                    }
-                                    }}
-                                    accept="image/png,image/jpeg"
+                                    onChange={handleFileSelect}
+                                    accept="image/png,image/jpeg,image/jpg"
                                 >
                                     {(props) => (
-                                    <ActionIcon
-                                        size="lg"
-                                        color="blue"
-                                        variant="filled"
-                                        aria-label="Subir foto"
-                                        {...props}
-                                        loading={loadingPhoto}
-                                    >
-                                        <IconPhotoEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                                    </ActionIcon>
+                                        <ActionIcon
+                                            size="lg"
+                                            color="blue"
+                                            variant="filled"
+                                            aria-label="Subir foto"
+                                            {...props}
+                                            loading={loadingPhoto}
+                                        >
+                                            <IconPhoto style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                                        </ActionIcon>
                                     )}
                                 </FileButton>
-
-                                <ActionIcon
-                                    size="lg"
-                                    color="red"
-                                    variant="filled"
-                                    aria-label="Eliminar foto"
-                                    onClick={handleDeletePhoto}
-                                    loading={loadingPhoto}
-                                    disabled={existPhoto} // Deshabilitar si es la foto por defecto
-                                >
-                                    <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                                </ActionIcon>
-                            </Group> */}
-
-                            {/* {file && (
-                            <Group justify="center" mt="sm">
-                                <Button
-                                size="xs"
-                                onClick={handleUploadPhoto}
-                                loading={loadingPhoto}
-                                leftSection={<IconPhotoUp size={16} />}
-                                >
-                                Guardar foto
-                                </Button>
-                                <Button
-                                size="xs"
-                                color="red"
-                                variant="outline"
-                                onClick={() => {
-                                    setFile(null);
-                                    setPreview(null);
-                                }}
-                                leftSection={<IconPhotoX size={16} />}
-                                >
-                                Cancelar
-                                </Button>
                             </Group>
-                            )}
 
-                            {errorPhoto && (
-                            <Text c={errorPhoto.includes('correctamente') ? "green" : "red"} size="sm" ta="center" mt="sm">
-                                {errorPhoto}
-                            </Text>
-                            )} */}
+                            {selectedFile && (
+                                <Group justify="center" mt="sm">
+                                    <Button
+                                        size="xs"
+                                        onClick={handleUploadPhoto}
+                                        loading={loadingPhoto}
+                                    >
+                                        Guardar foto
+                                    </Button>
+                                    <Button
+                                        size="xs"
+                                        color="red"
+                                        variant="outline"
+                                        onClick={handleCancelPhoto}
+                                        disabled={loadingPhoto}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                </Group>
+                            )}
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={7}>
@@ -543,6 +782,69 @@ export function MiPerfil() {
                     
                 </Grid>
             </Card>
+
+            {/* Modal para recortar imagen */}
+            <Modal
+                opened={cropModalOpen}
+                onClose={handleCancelCrop}
+                title="Recortar y ajustar imagen de perfil"
+                size="lg"
+                centered
+            >
+                <Stack gap="md">
+                    {imageToCrop && (
+                        <div 
+                            style={{ 
+                                position: 'relative', 
+                                width: '100%', 
+                                height: 400, 
+                                background: '#333',
+                                borderRadius: '8px',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <Cropper
+                                image={imageToCrop}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={onCropComplete}
+                                cropShape="round"
+                                showGrid={false}
+                            />
+                        </div>
+                    )}
+                    <div>
+                        <Text size="sm" mb="xs" fw={500}>Zoom</Text>
+                        <Slider
+                            value={zoom}
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            onChange={setZoom}
+                            label={(value) => value.toFixed(1)}
+                            marks={[
+                                { value: 1, label: '1x' },
+                                { value: 2, label: '2x' },
+                                { value: 3, label: '3x' },
+                            ]}
+                        />
+                    </div>
+                    <Text size="xs" c="dimmed" ta="center">
+                        Arrastra la imagen para ajustar la posición y usa el zoom para acercar o alejar
+                    </Text>
+                    <Group justify="flex-end" mt="md">
+                        <Button variant="outline" onClick={handleCancelCrop}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleApplyCrop} leftSection={<IconCheck size={16} />}>
+                            Aplicar recorte
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
         </Container>
     );
 }

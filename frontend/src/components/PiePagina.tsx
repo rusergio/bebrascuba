@@ -1,10 +1,15 @@
-import { Text, Container, ActionIcon, Group, rem, Title, Anchor, Tooltip, Image  } from '@mantine/core';
-import { IconBrandFacebook, IconBrandTelegram, IconBrandWhatsapp, IconDeviceMobile, IconMail, IconPhone } from '@tabler/icons-react';
+import { Text, Container, Group, Title, Anchor, Menu, UnstyledButton, useMantineTheme } from '@mantine/core';
+import { Image } from '@mantine/core';
+import { IconBrandFacebook, IconBrandTelegram, IconBrandWhatsapp, IconDeviceMobile, IconMail, IconPhone, IconChevronDown, IconShare } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 // import { MantineLogo } from '@mantinex/mantine-logo';
 import classes from '../styles/PiePagina.module.css';
 import logoBebrasCuba from '../assets/logobebrascuba.png';
 import logoUCLV from '../assets/UCLV.png';
 export function PiePagina() {
+    const theme = useMantineTheme();
+    const [socialMenuOpened, { open: openSocialMenu, close: closeSocialMenu }] = useDisclosure(false);
+
     return (
         <footer className={classes.footer}>
             <Container className={classes.inner}>
@@ -69,25 +74,58 @@ export function PiePagina() {
             </Container>
             <Container className={classes.afterFooter}>
                 <Text fw={700} size="sm" c={'gray'}>
-                    © 2024 BEBRASCUBA
+                    © {new Date().getFullYear()} BEBRASCUBA
                 </Text>
-                <Group gap={0} className={classes.social} justify="flex-end" wrap="nowrap">
-                    <Tooltip arrowOffset={25} arrowSize={8} label="WhatsApp" withArrow position="top-start" transitionProps={{ transition: 'skew-up', duration: 300 }}>
-                        <ActionIcon size="lg" color="gray" variant="subtle">
-                            <IconBrandWhatsapp style={{ width: rem(20), height: rem(20) }} stroke={1.7} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip arrowOffset={25} arrowSize={8} label="Facebook" withArrow position="top-start" transitionProps={{ transition: 'skew-up', duration: 300 }}>
-                        <ActionIcon size="lg" color="gray" variant="subtle">
-                            <IconBrandFacebook style={{ width: rem(20), height: rem(20) }} stroke={1.7} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip arrowOffset={25} arrowSize={8} label="Telegram" withArrow position="top-start" transitionProps={{ transition: 'skew-up', duration: 300 }}>
-                        <ActionIcon size="lg" color="gray" variant="subtle">
-                            <IconBrandTelegram style={{ width: rem(20), height: rem(20) }} stroke={1.7} />
-                        </ActionIcon>
-                    </Tooltip>
-                </Group>
+                <Menu
+                    width={260}
+                    position="top-end"
+                    transitionProps={{ transition: 'pop-top-right' }}
+                    onClose={closeSocialMenu}
+                    onOpen={openSocialMenu}
+                    withinPortal
+                >
+                    <Menu.Target>
+                        <UnstyledButton className={classes.social}>
+                            <Group gap={7}>
+                                <IconShare size={18} stroke={1.5} />
+                                <Text fw={500} size="sm" lh={1}>
+                                    Redes Sociales
+                                </Text>
+                                <IconChevronDown size={12} stroke={1.5} />
+                            </Group>
+                        </UnstyledButton>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                        <Menu.Label>Síguenos en</Menu.Label>
+                        <Menu.Item
+                            leftSection={<IconBrandWhatsapp size={16} color={theme.colors.green[6]} stroke={1.5} />}
+                            component="a"
+                            href="https://wa.me/5359945580"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            WhatsApp
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={<IconBrandFacebook size={16} color={theme.colors.blue[6]} stroke={1.5} />}
+                            component="a"
+                            href="https://www.facebook.com/bebrascuba"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Facebook
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={<IconBrandTelegram size={16} color={theme.colors.cyan[6]} stroke={1.5} />}
+                            component="a"
+                            href="https://t.me/bebrascuba"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Telegram
+                        </Menu.Item>
+                    </Menu.Dropdown>
+                </Menu>
             </Container>
         </footer>
     );

@@ -292,7 +292,7 @@ export function P_GenerarListaVille() {
                     <Title order={3}>Configurar datos para examen</Title>
                     <Text c="dimmed">Configure los datos según el orden de la organización internacional</Text>
                     <Grid mt={15}>
-                        <Grid.Col span={5}>
+                        <Grid.Col span={{ base: 12, md: 5 }}>
                             <MultiSelect
                                 label="Seleccione las columnas"
                                 placeholder="Seleccione las columnas a generar"
@@ -302,18 +302,18 @@ export function P_GenerarListaVille() {
                                 clearable
                             />
                         </Grid.Col>
-                        <Grid.Col span={7}>
-                            <Text fw={400} ml={30} size="sm" mb="xs">Agrupar por ...</Text>
+                        <Grid.Col span={{ base: 12, md: 7 }}>
+                            <Text fw={400} ml={{ base: 0, md: 30 }} size="sm" mb="xs" mt={{ base: 'md', md: 0 }}>Agrupar por ...</Text>
                             <Flex
                                 mih={50}
                                 gap="md"
-                                justify="flex-start"
+                                justify={{ base: 'flex-start', sm: 'flex-start' }}
                                 align="flex-start"
-                                direction="row"
+                                direction={{ base: 'column', sm: 'row' }}
                                 wrap="wrap"
                             >
                                 <Checkbox
-                                    ml={20}
+                                    ml={{ base: 0, md: 20 }}
                                     label="Categoría"
                                     mt={10}
                                     checked={agruparPorCategoria}
@@ -325,12 +325,13 @@ export function P_GenerarListaVille() {
                                     checked={agruparPorSexo}
                                     onChange={(e) => setAgruparPorSexo(e.currentTarget.checked)}
                                 />
-                                <Group mt={5} ml={20}>
+                                <Group mt={5} ml={{ base: 0, md: 20 }} w={{ base: '100%', sm: 'auto' }}>
                                     <Button
                                         variant="filled"
                                         rightSection={<IconTableFilled size={16} />}
                                         onClick={generarTablas}
                                         loading={loading}
+                                        style={{ width: '100%' }}
                                     >
                                         Generar tabla
                                     </Button>
@@ -342,22 +343,24 @@ export function P_GenerarListaVille() {
 
                 {tablasGeneradas.length > 0 && (
                     <Card withBorder mt={10}>
-                        <Group justify="space-between" mb="md">
+                        <Group justify="space-between" mb="md" wrap="wrap" gap="md">
                             <Title order={3}>Tablas Generadas</Title>
-                            <Group>
+                            <Group gap="xs" wrap="wrap">
                                 <Button
                                     variant="light"
                                     leftSection={<IconFileSpreadsheet size={16} />}
                                     onClick={exportarExcel}
+                                    size="sm"
                                 >
-                                    Exportar Excel
+                                    <Text span hidden={{ base: true, sm: false }}>Exportar </Text>Excel
                                 </Button>
                                 <Button
                                     variant="light"
                                     leftSection={<IconFileDownload size={16} />}
                                     onClick={exportarCSV}
+                                    size="sm"
                                 >
-                                    Exportar CSV
+                                    <Text span hidden={{ base: true, sm: false }}>Exportar </Text>CSV
                                 </Button>
                             </Group>
                         </Group>
@@ -366,36 +369,38 @@ export function P_GenerarListaVille() {
                                 {tablasGeneradas.map((grupo) => (
                                     <Card key={grupo.key} withBorder p="md">
                                         <Title order={4} mb="md">{grupo.label}</Title>
-                                        <Table stickyHeader stickyHeaderOffset={60} highlightOnHover>
-                                            <Table.Thead>
-                                                <Table.Tr>
-                                                    {columnasSeleccionadas.map((col) => (
-                                                        <Table.Th key={col} style={{ padding: '12px 16px' }}>{col}</Table.Th>
-                                                    ))}
-                                                </Table.Tr>
-                                            </Table.Thead>
-                                            <Table.Tbody>
-                                                {grupo.estudiantes.map((estudiante) => (
-                                                    <Table.Tr key={estudiante.id}>
-                                                        {columnasSeleccionadas.map((col) => {
-                                                            let contenido = '';
-                                                            switch (col) {
-                                                                case 'Nombre':
-                                                                    contenido = estudiante.nombre_estudiante;
-                                                                    break;
-                                                                case 'Escuela':
-                                                                    contenido = estudiante.nombre_escuela || '-';
-                                                                    break;
-                                                                case 'Grado':
-                                                                    contenido = estudiante.grado?.toString() || '-';
-                                                                    break;
-                                                            }
-                                                            return <Table.Td key={col} style={{ padding: '12px 16px' }}>{contenido}</Table.Td>;
-                                                        })}
+                                        <Table.ScrollContainer minWidth={500} type="native">
+                                            <Table stickyHeader stickyHeaderOffset={60} highlightOnHover>
+                                                <Table.Thead>
+                                                    <Table.Tr>
+                                                        {columnasSeleccionadas.map((col) => (
+                                                            <Table.Th key={col} style={{ padding: '12px 16px' }}>{col}</Table.Th>
+                                                        ))}
                                                     </Table.Tr>
-                                                ))}
-                                            </Table.Tbody>
-                                        </Table>
+                                                </Table.Thead>
+                                                <Table.Tbody>
+                                                    {grupo.estudiantes.map((estudiante) => (
+                                                        <Table.Tr key={estudiante.id}>
+                                                            {columnasSeleccionadas.map((col) => {
+                                                                let contenido = '';
+                                                                switch (col) {
+                                                                    case 'Nombre':
+                                                                        contenido = estudiante.nombre_estudiante;
+                                                                        break;
+                                                                    case 'Escuela':
+                                                                        contenido = estudiante.nombre_escuela || '-';
+                                                                        break;
+                                                                    case 'Grado':
+                                                                        contenido = estudiante.grado?.toString() || '-';
+                                                                        break;
+                                                                }
+                                                                return <Table.Td key={col} style={{ padding: '12px 16px' }}>{contenido}</Table.Td>;
+                                                            })}
+                                                        </Table.Tr>
+                                                    ))}
+                                                </Table.Tbody>
+                                            </Table>
+                                        </Table.ScrollContainer>
                                     </Card>
                                 ))}
                             </Stack>

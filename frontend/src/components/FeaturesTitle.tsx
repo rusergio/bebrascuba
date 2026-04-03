@@ -104,7 +104,7 @@ export function FeaturesTitle() {
   // }  
 
   return (  
-    <Container size={'xl'}>  
+    <Container size="lg">  
       <div className={classes.wrapper}>  
         <Grid gutter={80}>  
           <Grid.Col span={{ base: 12, md: 5 }}>  

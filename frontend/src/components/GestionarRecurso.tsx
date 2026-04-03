@@ -262,10 +262,18 @@ export function GestionarRecurso() {
 
     // Función para abrir el modal de edición
     const openEditModal = (recurso: RecursoFromContext) => {
+        // Asegurarse de que nombre y descripcion tengan valores válidos
+        const nombreValido = recurso.nombre && recurso.nombre.trim().length > 0 
+            ? recurso.nombre.trim() 
+            : 'Sin nombre';
+        const descripcionValida = recurso.descripcion && recurso.descripcion.trim().length > 0 
+            ? recurso.descripcion.trim() 
+            : '';
+        
         editForm.setValues({
             id: recurso.id,
-            nombre: recurso.nombre,
-            descripcion: recurso.descripcion,
+            nombre: nombreValido,
+            descripcion: descripcionValida,
             archivo: null
         });
         setEditModalOpen(true);
@@ -279,15 +287,54 @@ export function GestionarRecurso() {
 
     // Función para manejar la edición de recursos
     const handleEditSubmit = async (values: RecursoFormData) => {
+        // Validar que el nombre no esté vacío
+        if (!values.nombre || values.nombre.trim().length === 0) {
+            notifications.show({
+                title: 'Error de validación',
+                message: 'El nombre es requerido',
+                color: 'red',
+                icon: <IconAlertCircle size={18} />,
+            });
+            return;
+        }
+
+        // Validar el formulario antes de enviar
+        if (!editForm.isValid()) {
+            notifications.show({
+                title: 'Error de validación',
+                message: 'Por favor, complete todos los campos requeridos correctamente',
+                color: 'red',
+                icon: <IconAlertCircle size={18} />,
+            });
+            return;
+        }
+
         try {
             const formData = new FormData();
-            formData.append('nombre', values.nombre);
-            formData.append('descripcion', values.descripcion);
+            
+            // Asegurarse de que el nombre tenga un valor válido (no puede estar vacío)
+            const nombreValido = values.nombre && values.nombre.trim().length > 0 
+                ? values.nombre.trim() 
+                : 'Sin nombre';
+            
+            formData.append('nombre', nombreValido);
+            
+            // La descripción puede ser opcional según el backend
+            const descripcionValida = values.descripcion ? values.descripcion.trim() : '';
+            formData.append('descripcion', descripcionValida);
             
             // Solo agregar archivo si se seleccionó uno nuevo
             if (values.archivo) {
                 formData.append('archivo', values.archivo);
             }
+
+            // Debug: verificar que el FormData tenga los valores correctos
+            console.log('Enviando FormData:', {
+                nombre: nombreValido,
+                descripcion: descripcionValida,
+                tieneArchivo: !!values.archivo,
+                id: values.id
+            });
 
             const response = await axios.put(`/api/recursos/${values.id}`, formData, {
                 headers: {
@@ -312,7 +359,18 @@ export function GestionarRecurso() {
             
             if (axios.isAxiosError(error)) {
                 console.error('Error del servidor:', error.response?.data);
-                errorMessage = error.response?.data?.message || errorMessage;
+                
+                // Manejar errores de validación específicos
+                if (error.response?.status === 422) {
+                    const errors = error.response.data.errors;
+                    if (errors && errors.nombre) {
+                        errorMessage = Array.isArray(errors.nombre) ? errors.nombre[0] : errors.nombre;
+                    } else {
+                        errorMessage = error.response.data.message || 'Error de validación';
+                    }
+                } else {
+                    errorMessage = error.response?.data?.message || errorMessage;
+                }
             } else {
                 console.error('Error inesperado:', error);
             }
@@ -393,7 +451,7 @@ export function GestionarRecurso() {
                                     Sube archivo de apoyo al concurso
                                 </Text>
                                 <Grid mb={10}>
-                                    <Grid.Col span={6}>
+                                    <Grid.Col span={{ base: 12, sm: 6 }}>
                                         <TextInput
                                             {...form.getInputProps('nombre')}  
                                             withAsterisk  
@@ -401,7 +459,7 @@ export function GestionarRecurso() {
                                             placeholder="Digite el titulo del documento"
                                         />
                                     </Grid.Col>
-                                    <Grid.Col span={6}>
+                                    <Grid.Col span={{ base: 12, sm: 6 }}>
                                         <TextInput
                                             {...form.getInputProps('descripcion')}  
                                             withAsterisk  
@@ -411,7 +469,7 @@ export function GestionarRecurso() {
                                     </Grid.Col>
                                 </Grid>
                                 <Grid mb={20}>
-                                    <Grid.Col span={7}>
+                                    <Grid.Col span={{ base: 12, md: 7 }}>
                                         <FileInput
                                             {...form.getInputProps('archivo')}  
                                             withAsterisk  
@@ -422,8 +480,8 @@ export function GestionarRecurso() {
                                             leftSection={<IconFileTypePdf size={16} />} 
                                         />
                                     </Grid.Col>
-                                    <Grid.Col span={2}>
-                                        <Group ml={10} mt={25}>
+                                    <Grid.Col span={{ base: 12, sm: 6, md: 2 }}>
+                                        <Group ml={{ base: 0, md: 10 }} mt={{ base: 10, md: 25 }}>
                                             <Button 
                                                 variant="light"  
                                                 rightSection={<IconUpload size={15} />}  
@@ -434,8 +492,8 @@ export function GestionarRecurso() {
                                             </Button>
                                         </Group>
                                     </Grid.Col>
-                                    <Grid.Col span={3}>
-                                        <Group mt={25}>
+                                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                                        <Group mt={{ base: 10, md: 25 }}>
                                         <Button 
                                         leftSection={<IconTrash size={17} />} 
                                             onClick={eliminarRecursos}
@@ -454,7 +512,7 @@ export function GestionarRecurso() {
                                     Listado de recursos subidos al sistema
                                 </Text> 
                                 
-                                <Table.ScrollContainer minWidth={500} >
+                                <Table.ScrollContainer minWidth={500} type="native">
                                     <Table mt={20} highlightOnHover >
                                         <Table.Thead>
                                             <Table.Tr>
@@ -484,6 +542,7 @@ export function GestionarRecurso() {
                 onClose={closeEditModal}
                 title="Editar Recurso"
                 size="lg"
+                fullScreen
             >
                 <form onSubmit={editForm.onSubmit(handleEditSubmit)}>
                     <Grid>

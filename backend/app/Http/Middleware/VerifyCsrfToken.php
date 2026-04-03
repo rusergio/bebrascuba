@@ -35,6 +35,7 @@ class VerifyCsrfToken extends Middleware
         'api/eliminar-recurso/*', 
         'api/recursos/*',
         'api/usuarios/*/roles',
-        'api/registrar-escuela'
+        'api/registrar-escuela',
+        'api/usuarios/*/foto-perfil'
     ];
 }

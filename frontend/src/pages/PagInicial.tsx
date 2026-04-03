@@ -39,7 +39,7 @@ export default function PagInicial() {
     // Resultado total por categoria 
     const totalRow = (  
         <Table.Tr>  
-            <Table.Th>Total</Table.Th>  
+            <Table.Th>Total por categoría</Table.Th>  
             <Table.Th>{totalPorCategoria?.superpegues || 0}</Table.Th>  
             <Table.Th>{totalPorCategoria?.peques || 0}</Table.Th>  
             <Table.Th>{totalPorCategoria?.benjamin || 0}</Table.Th>  
@@ -50,12 +50,9 @@ export default function PagInicial() {
         </Table.Tr>  
     );  
 
-    
     return (
         <MantineProvider>
-            {/* <HeroBullets /> */}
             <HeroContentLeft  />
-            {/* <HeroImageRight /> */}
             <FeaturesCards />
             <FeaturesTitle />
             <FeaturesAsymmetrical />

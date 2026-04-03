@@ -3,10 +3,13 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconStar, IconChevronDown, IconLogout, IconClipboardText, IconEyeglass, IconUser, IconUserShare, IconEyeSearch, IconUsersGroup, IconBuilding, IconClipboardList, IconFileTypeDoc, IconMessage, IconUserPlus, IconUsersPlus, IconFileDescription, IconUserEdit } from '@tabler/icons-react';
 import classes from '../styles/NavbarStyles.module.css';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import cx from 'clsx';
 import { ActionToggle } from './ActionToggle';
 import { useUserContext, useUserRoles } from '../context/UserContext';
+import axios from 'axios';
+
+axios.defaults.baseURL = 'http://localhost:8000';
 
 // Definición de tipos para los enlaces
 interface SimpleLink {
@@ -30,8 +33,10 @@ const commonLinks: NavigationLink[] = [
     { link: '/recurso', label: 'Recurso' },
 ];
 
-// Definición de enlaces específicos por rol
-const roleSpecificLinks = {
+// Definición de enlaces por nombre de rol
+// Usamos los nombres exactos según el seeder para mapear a los enlaces
+// Estos roles se identificarán por ID en el código, pero usamos nombres para el mapeo
+const roleSpecificLinksByName: Record<string, NavigationLink[]> = {
     'Profesor': [
         {
             link: '#1',
@@ -43,7 +48,7 @@ const roleSpecificLinks = {
             ],
         }
     ],
-    'Coordinador provincial': [
+    'Coordinador Provincial MINED': [
         {
             link: '#1',
             label: 'Gestionar Provincia',
@@ -54,7 +59,7 @@ const roleSpecificLinks = {
             ],
         },
     ],
-    'Coordinador Municipal': [
+    'Coordinador Municipal MINED': [
         {
             link: '#1',
             label: 'Gestionar Municipio',
@@ -73,7 +78,17 @@ const roleSpecificLinks = {
                 { link: '/gestionar_concurso', label: 'Edición', icon: IconClipboardList },
                 { link: '/gestor-recurso', label: 'Recursos', icon: IconFileTypeDoc },
                 { link: '/solicitudes', label: 'Solicitudes', icon: IconMessage },
-                // { link: '/configuracion', label: 'Configuración', icon: IconAdjustments },
+            ],
+        },
+    ],
+    'Coordinador Asistente': [
+        {
+            link: '#1',
+            label: 'Gestionar Concurso',
+            links: [
+                { link: '/gestionar_concurso', label: 'Edición', icon: IconClipboardList },
+                { link: '/gestor-recurso', label: 'Recursos', icon: IconFileTypeDoc },
+                { link: '/solicitudes', label: 'Solicitudes', icon: IconMessage },
             ],
         },
     ],
@@ -88,6 +103,15 @@ const roleSpecificLinks = {
             ],
         },
     ],
+    'Colaborador Universitario Bebras': [
+        {
+            link: '#1',
+            label: 'Gestionar',
+            links: [
+                // Agregar enlaces específicos para este rol si es necesario
+            ],
+        },
+    ],
 };
 
 const getUserProfilePath = () => {
@@ -97,29 +121,128 @@ const getUserProfilePath = () => {
 export function UnifiedNavbar() {
     const [opened, { toggle, close }] = useDisclosure(false);
     const [userMenuOpened, setUserMenuOpened] = useState(false);
+    const [userPhoto, setUserPhoto] = useState<string | null>(() => {
+        const photo = localStorage.getItem('userPhoto');
+        // Si la foto es solo una ruta relativa, construir la URL completa
+        if (photo && !photo.startsWith('http') && !photo.startsWith('/storage')) {
+            return photo.startsWith('storage/') ? `http://localhost:8000/${photo}` : `http://localhost:8000/storage/${photo}`;
+        }
+        return photo;
+    });
     const navigate = useNavigate();
     const { user } = useUserContext();
-    const { roles: userRoles, activeRole } = useUserRoles();
+    const { activeRole } = useUserRoles();
 
-    const getAllUserLinks = (): NavigationLink[] => {
-        const currentActiveRole = activeRole;
-        let currentRoles = currentActiveRole ? [currentActiveRole] : userRoles;
+    // Cargar foto del usuario al iniciar y escuchar cambios
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        
+        const loadUserPhoto = async () => {
+            if (userId) {
+                try {
+                    const response = await axios.get(`/api/usuarios/${userId}/foto-perfil`);
+                    if (response.data.success && response.data.photo_url) {
+                        setUserPhoto(response.data.photo_url);
+                        localStorage.setItem('userPhoto', response.data.photo_url);
+                    }
+                } catch (error) {
+                    // Si falla, usar localStorage
+                    const photo = localStorage.getItem('userPhoto');
+                    if (photo) {
+                        setUserPhoto(photo);
+                    }
+                }
+            } else {
+                const photo = localStorage.getItem('userPhoto');
+                if (photo) {
+                    setUserPhoto(photo);
+                }
+            }
+        };
 
-        if (currentRoles.length === 0) {
-            const localStorageRole = localStorage.getItem('userRole');
-            if (localStorageRole) {
-                currentRoles = [localStorageRole];
+        loadUserPhoto();
+
+        const handlePhotoUpdate = () => {
+            const photo = localStorage.getItem('userPhoto');
+            if (photo) {
+                setUserPhoto(photo);
+            } else if (userId) {
+                // Recargar desde el backend
+                loadUserPhoto();
+            }
+        };
+        
+        window.addEventListener('userPhotoUpdated', handlePhotoUpdate);
+        return () => window.removeEventListener('userPhotoUpdated', handlePhotoUpdate);
+    }, []);
+
+    // Obtener roles con IDs desde localStorage o contexto
+    const getUserRolesWithIds = (): Array<{ id: number; rol: string }> => {
+        // Intentar obtener desde allUserRolesData (tiene la estructura completa con IDs)
+        const allUserRolesData = localStorage.getItem('allUserRolesData');
+        if (allUserRolesData) {
+            try {
+                const rolesData = JSON.parse(allUserRolesData);
+                if (Array.isArray(rolesData) && rolesData.length > 0) {
+                    return rolesData.map((role: any) => ({
+                        id: role.id,
+                        rol: role.rol
+                    }));
+                }
+            } catch (e) {
+                console.error('Error parsing allUserRolesData:', e);
             }
         }
+        
+        // Fallback: obtener desde el contexto user
+        if (user?.roles && Array.isArray(user.roles)) {
+            return user.roles.map((role: any) => ({
+                id: role.id,
+                rol: role.rol
+            }));
+        }
+        
+        return [];
+    };
+
+    const getAllUserLinks = (): NavigationLink[] => {
+        // Obtener el rol activo (el que el usuario seleccionó en Mi Perfil)
+        const currentActiveRole = activeRole || localStorage.getItem('activeRole') || localStorage.getItem('userRole');
+        
+        if (!currentActiveRole) {
+            // Si no hay rol activo, solo mostrar enlaces comunes
+            return commonLinks;
+        }
+
+        // Obtener roles con IDs
+        const userRolesWithIds = getUserRolesWithIds();
+        
+        // Nombres de roles permitidos según el usuario (nombres exactos del seeder)
+        const allowedRoleNames = [
+            'Administrador',
+            'Coordinador Nacional',
+            'Coordinador Asistente',
+            'Coordinador Provincial MINED',
+            'Coordinador Municipal MINED',
+            'Profesor',
+            'Colaborador Universitario Bebras'
+        ];
+
+        // Filtrar solo el rol activo que esté en la lista de permitidos
+        const activeRoleData = userRolesWithIds.find(role => 
+            role.rol === currentActiveRole && allowedRoleNames.includes(role.rol)
+        );
 
         const allLinks = new Map<string, NavigationLink>();
 
+        // Siempre agregar enlaces comunes
         commonLinks.forEach(link => {
             allLinks.set(link.label, link);
         });
 
-        currentRoles.forEach(role => {
-            const roleLinksForRole = roleSpecificLinks[role as keyof typeof roleSpecificLinks];
+        // Solo agregar enlaces del rol activo (no todos los roles)
+        if (activeRoleData) {
+            const roleLinksForRole = roleSpecificLinksByName[activeRoleData.rol];
             if (roleLinksForRole) {
                 roleLinksForRole.forEach((link: NavigationLink) => {
                     if (!allLinks.has(link.label)) {
@@ -127,7 +250,7 @@ export function UnifiedNavbar() {
                     }
                 });
             }
-        });
+        }
 
         return Array.from(allLinks.values());
     };
@@ -267,10 +390,16 @@ export function UnifiedNavbar() {
                                 >
                                     <Group gap={7}>
                                         <Avatar
-                                            src=""
+                                            src={userPhoto || undefined}
                                             radius="xl"
                                             size={'sm'}
-                                        />
+                                        >
+                                            {!userPhoto && (
+                                                <Text size="xs" fw={700}>
+                                                    {localStorage.getItem('userName')?.charAt(0).toUpperCase() || 'U'}
+                                                </Text>
+                                            )}
+                                        </Avatar>
                         <Text fw={500} size="sm" lh={1} mr={3}>
                             {userName}
                         </Text>

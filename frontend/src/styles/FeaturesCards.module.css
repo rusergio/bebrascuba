@@ -5,7 +5,7 @@
     @media (max-width: $mantine-breakpoint-sm) {
     font-size: rem(24px);
     }
-}
+  }
 
 .description {
     max-width: rem(600px);

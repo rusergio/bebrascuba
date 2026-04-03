@@ -299,7 +299,7 @@ class EdicionController extends Controller
             'fecha_inic_inscripVille' => $request->fecha_inic_inscripVille,  
         ]);
 
-        return reponse()->json(['message' => 'Fecha actualizadas con éxito'], 200);
+        return response()->json(['message' => 'Fecha actualizadas con éxito'], 200);
     }
     // Función para actualizar las fechas considerados importantes 
     public function marcarFechasImportantes(Request $request) {
@@ -320,6 +320,6 @@ class EdicionController extends Controller
             'fecha_inic_realiz' => $request->fecha_inic_realiz,  
             'fecha_fin_realiz' => $request->fecha_fin_realiz,  
         ]);
-        return reponse()->json(['message' => 'Fecha actualizadas con éxito'], 200);
+        return response()->json(['message' => 'Fecha actualizadas con éxito'], 200);
     }
 }

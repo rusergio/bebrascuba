@@ -74,7 +74,14 @@ export function LoginLinks() {
 
             // Guardar foto de perfil si está disponible (usada en MiPerfil)
             if (userData.foto_perfil) {
-                localStorage.setItem('userPhoto', userData.foto_perfil);
+                // Construir la URL completa si es solo una ruta relativa
+                let photoUrl = userData.foto_perfil;
+                if (!photoUrl.startsWith('http') && !photoUrl.startsWith('/storage')) {
+                    photoUrl = photoUrl.startsWith('storage/') 
+                        ? `http://localhost:8000/${photoUrl}` 
+                        : `http://localhost:8000/storage/${photoUrl}`;
+                }
+                localStorage.setItem('userPhoto', photoUrl);
             }
             
             // Guardar información del usuario en localStorage para persistencia

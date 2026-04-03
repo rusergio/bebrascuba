@@ -651,7 +651,7 @@ export function TablaGlobalUsuarios() {
   }
 
   return (
-    <Container size='xl' mt={30} >
+    <Container size={{ base: '100%', sm: 'md', lg: 'xl' }} mt={30} px={{ base: 'xs', sm: 'md' }}>
       <Fieldset legend="">
         <ScrollArea>
           <TextInput
@@ -661,7 +661,8 @@ export function TablaGlobalUsuarios() {
             value={search}
             onChange={handleSearchChange}
           />
-          <Table verticalSpacing="xs" miw={700} layout="fixed" mb={10}>
+          <Table.ScrollContainer minWidth={{ base: 300, sm: 500, md: 700 }} type="native">
+          <Table verticalSpacing="xs" layout="fixed" mb={10}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th style={{ width: rem(40) }}>
@@ -704,6 +705,7 @@ export function TablaGlobalUsuarios() {
               )}
             </Table.Tbody>
           </Table>
+          </Table.ScrollContainer>
 
           <Pagination.Root onChange={handlePageChange} total={Math.ceil(filterData(data, search).length / rowsPerPage)}>  
             <Group gap={5} justify="center">  
@@ -747,7 +749,7 @@ export function TablaGlobalUsuarios() {
         {rolSeleccionado === 'Profesor' && (
           <>
             <Grid mt="md">
-              <Grid.Col span={6}>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Select
                   label="Provincia"
                   withAsterisk
@@ -763,7 +765,7 @@ export function TablaGlobalUsuarios() {
                   onChange={setProvinciaSeleccionada}
                 />
               </Grid.Col>
-              <Grid.Col span={6}>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Select
                   label="Municipio"
                   withAsterisk

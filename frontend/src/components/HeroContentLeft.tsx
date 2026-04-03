@@ -1,4 +1,4 @@
-import { Overlay, Container, Title, Text } from '@mantine/core';
+import { Overlay, Container, Title } from '@mantine/core';
 import classes from '../styles/HeroContentLeft.module.css';
 import { useDataContext } from '../context/DataContext';
 

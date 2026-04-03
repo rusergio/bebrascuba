@@ -15,6 +15,7 @@ use App\Models\Rol;
 use App\Models\RoleUser;
 use App\Models\Profesor;
 use App\Models\Escuela;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -238,6 +239,64 @@ class UserController extends Controller
             'success' => true,
             'path' => 'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png'
         ]);
+    }
+
+    // Función para subir foto de perfil del usuario (User)
+    public function uploadUserPhoto(Request $request, $userId) {
+        $request->validate([
+            'foto_perfil' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $user = User::findOrFail($userId);
+
+        // Eliminar foto anterior si existe
+        if ($user->foto_perfil && Storage::disk('public')->exists($user->foto_perfil)) {
+            Storage::disk('public')->delete($user->foto_perfil);
+        }
+
+        // Guardar la nueva foto
+        $path = $request->file('foto_perfil')->store('users/fotos', 'public');
+        $user->foto_perfil = $path;
+        $user->save();
+
+        // Construir la URL completa de la foto
+        $photoUrl = null;
+        if ($user->foto_perfil) {
+            // Extraer solo el nombre del archivo de la ruta
+            $filename = basename($user->foto_perfil);
+            // Construir URL usando la ruta de API
+            $photoUrl = url("api/storage/users/fotos/{$filename}");
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Foto de perfil actualizada correctamente',
+            'path' => $photoUrl,
+            'foto_perfil' => $user->foto_perfil,
+            'photo_url' => $photoUrl
+        ], 200);
+    }
+
+    // Función para obtener la foto de perfil del usuario por ID
+    public function getUserPhoto($userId) {
+        $user = User::findOrFail($userId);
+        
+        $photoUrl = null;
+        if ($user->foto_perfil) {
+            // Verificar que el archivo existe
+            if (Storage::disk('public')->exists($user->foto_perfil)) {
+                // Extraer solo el nombre del archivo de la ruta
+                $filename = basename($user->foto_perfil);
+                // Construir URL usando la ruta de API
+                $photoUrl = url("api/storage/users/fotos/{$filename}");
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'foto_perfil' => $user->foto_perfil,
+            'photo_url' => $photoUrl
+        ], 200);
     }
 
     // FunciÃ³n para asignar rol a un usuario

@@ -1,6 +1,6 @@
 import { Container, Title, Button, Group, rem, Grid, Text, Card, Select, Badge} from '@mantine/core';
 import { Fieldset } from '@mantine/core';
-import { IconCalendarMonth, IconCaretDownFilled, IconCheck, IconX } from '@tabler/icons-react';
+import { IconCalendarMonth, IconCaretDownFilled, IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
 import classes from '../styles/FeaturesCards.module.css';
 import { DateInput, DatePickerInput } from '@mantine/dates';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -9,6 +9,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useForm } from '@mantine/form';
 import { useDataContext } from '../context/DataContext';
+import { notifications } from '@mantine/notifications';
 axios.defaults.baseURL = 'http://localhost:8000'; // <--- Ajusta según tu configuración
 
 dayjs.extend(customParseFormat);
@@ -58,16 +59,28 @@ export function GestionarConcurso() {
     const handleEditionDate =  async() => {
         setLoading(true); // Iniciar el estado de carga
         setError(null);
-        if(!formE.isValid) return;
+        setStatusMessage('');
+        if(!formE.isValid()) return;
         try {
             // Realiza la solicitud PUT para actualizar las fechas
             const response = await axios.put("api/actualizar-fecha", {
-                fecha_convocatoria: dayjs(formE.values.fecha_conv).add(1, 'day').format('YYYY-MM-DD'),
-                fecha_inic_preinscrip: dayjs(formE.values.periodo_insc[0]).add(1, 'day').format('YYYY-MM-DD'),
-                fecha_fin_preinscrip: dayjs(formE.values.periodo_insc[1]).add(1, 'day').format('YYYY-MM-DD'),
-                fecha_inic_inscripVille: dayjs(formE.values.fecha_insc_ville).add(1, 'day').format('YYYY-MM-DD'),
+                fecha_convocatoria: dayjs(formE.values.fecha_conv).format('YYYY-MM-DD'),
+                fecha_inic_preinscrip: dayjs(formE.values.periodo_insc[0]).format('YYYY-MM-DD'),
+                fecha_fin_preinscrip: dayjs(formE.values.periodo_insc[1]).format('YYYY-MM-DD'),
+                fecha_inic_inscripVille: dayjs(formE.values.fecha_insc_ville).format('YYYY-MM-DD'),
             });
-            setStatusMessage(response.data.message);
+            
+            // Mostrar notificación de éxito
+            notifications.show({
+                title: '✅ Éxito',
+                message: response.data.message || 'Fechas actualizadas correctamente',
+                color: 'teal',
+                icon: <IconCheck size={18} />,
+            });
+            
+            // Limpiar el formulario después de éxito
+            formE.reset();
+            setStatusMessage('');
             
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -75,13 +88,32 @@ export function GestionarConcurso() {
                     const errors = error.response.data.errors;
                     const errorMessage = Object.values(errors).flat().join(', ');
                     setError(errorMessage);
+                    notifications.show({
+                        title: 'Error de validación',
+                        message: errorMessage,
+                        color: 'red',
+                        icon: <IconAlertCircle size={18} />,
+                    });
                 }
                 else {
-                    const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
+                    const errorMessage = error.response?.data?.message || 'Error al actualizar las fechas';
                     setError(errorMessage);
+                    notifications.show({
+                        title: 'Error',
+                        message: errorMessage,
+                        color: 'red',
+                        icon: <IconAlertCircle size={18} />,
+                    });
                 }
             } else {
-                setError('Error inesperado. Por favor, inténtalo de nuevo.');
+                const errorMsg = 'Error inesperado. Por favor, inténtalo de nuevo.';
+                setError(errorMsg);
+                notifications.show({
+                    title: 'Error',
+                    message: errorMsg,
+                    color: 'red',
+                    icon: <IconAlertCircle size={18} />,
+                });
             }
         } finally {
             setLoading(false);
@@ -91,29 +123,61 @@ export function GestionarConcurso() {
     const handleConvocatoria =  async() => {
         setCargar(true); // Iniciar el estado de carga
         setError(null);
-        if(!formC.isValid) return;
+        setStatusMessage('');
+        if(!formC.isValid()) return;
 
         try {
             const response = await axios.put("api/actualizar-fecha-import", {
-                fecha_resultados: dayjs(formC.values.fecha_result).add(1, 'day').format('YYYY-MM-DD'),
-                fecha_inic_realiz: dayjs(formC.values.fecha_realz_concurs[0]).add(1, 'day').format('YYYY-MM-DD'),
-                fecha_fin_realiz: dayjs(formC.values.fecha_realz_concurs[1]).add(1, 'day').format('YYYY-MM-DD'),
+                fecha_resultados: dayjs(formC.values.fecha_result).format('YYYY-MM-DD'),
+                fecha_inic_realiz: dayjs(formC.values.fecha_realz_concurs[0]).format('YYYY-MM-DD'),
+                fecha_fin_realiz: dayjs(formC.values.fecha_realz_concurs[1]).format('YYYY-MM-DD'),
             });
-            setStatusMessage(response.data.message); 
-            setError("Fechas fueron publicadas");
+            
+            // Mostrar notificación de éxito
+            notifications.show({
+                title: '✅ Éxito',
+                message: response.data.message || 'Fechas de convocatoria publicadas correctamente',
+                color: 'teal',
+                icon: <IconCheck size={18} />,
+            });
+            
+            // Limpiar el formulario después de éxito
+            formC.reset();
+            setError(null);
+            setStatusMessage('');
+            
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 if(error.response?.status === 422){
                     const errors = error.response.data.errors;
                     const errorMessage = Object.values(errors).flat().join(', ');
                     setError(errorMessage);
+                    notifications.show({
+                        title: 'Error de validación',
+                        message: errorMessage,
+                        color: 'red',
+                        icon: <IconAlertCircle size={18} />,
+                    });
                 }
                 else {
-                    const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
+                    const errorMessage = error.response?.data?.message || 'Error al publicar las fechas';
                     setError(errorMessage);
+                    notifications.show({
+                        title: 'Error',
+                        message: errorMessage,
+                        color: 'red',
+                        icon: <IconAlertCircle size={18} />,
+                    });
                 }
             } else {
-                setError('Error inesperado. Por favor, inténtalo de nuevo.');
+                const errorMsg = 'Error inesperado. Por favor, inténtalo de nuevo.';
+                setError(errorMsg);
+                notifications.show({
+                    title: 'Error',
+                    message: errorMsg,
+                    color: 'red',
+                    icon: <IconAlertCircle size={18} />,
+                });
             }
         } finally {
             setCargar(false);

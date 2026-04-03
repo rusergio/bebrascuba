@@ -178,6 +178,18 @@ Route::get('/usuarios/profesores', [UserController::class, 'listarProfesores']);
 Route::get('/usuarios/multiples-roles', [UserController::class, 'listarUsuariosConMultiplesRoles']);
 // Solicitud para listar todos los usuarios con roles y número de escuela
 Route::get('/usuarios/todos', [UserController::class, 'listarTodosUsuarios']);
+// Solicitud para subir foto de perfil del usuario
+Route::post('/usuarios/{userId}/foto-perfil', [UserController::class, 'uploadUserPhoto']);
+// Solicitud para obtener foto de perfil del usuario
+Route::get('/usuarios/{userId}/foto-perfil', [UserController::class, 'getUserPhoto']);
+// Ruta para servir imágenes de perfil
+Route::get('/storage/users/fotos/{filename}', function ($filename) {
+    $path = storage_path('app/public/users/fotos/' . $filename);
+    if (file_exists($path)) {
+        return response()->file($path, ['Content-Type' => 'image/jpeg']);
+    }
+    return abort(404);
+})->where('filename', '.*');
 
 /**
  * @arg: Solicituds para [Subsistema]
