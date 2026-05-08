@@ -1,10 +1,11 @@
-import { Container, Title, Button, Group, Grid, Text, Card, Checkbox, MultiSelect, Flex, Table, ScrollArea, Stack } from '@mantine/core';
+import { Container, Title, Button, Group, Grid, Text, Card, MultiSelect, Flex, Table, ScrollArea, Stack } from '@mantine/core';
 import { Fieldset } from '@mantine/core';
 import { IconTableFilled, IconFileDownload, IconFileSpreadsheet } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { notifications } from '@mantine/notifications';
 import * as XLSX from 'xlsx';
+import { useComputedColorScheme } from '@mantine/core';
 
 axios.defaults.baseURL = 'http://localhost:8000';
 
@@ -32,15 +33,61 @@ const columnasDisponibles = [
     { value: 'Grado', label: 'Grado' },
 ];
 
+const opcionesAgrupacion = [
+    { value: 'categoria', label: 'Categoría' },
+    { value: 'sexo', label: 'Sexo' },
+];
+
+const normalizarCategoria = (categoria: string | null) => {
+    const c = (categoria ?? '').trim();
+    return c === '' || c === '0' ? 'Sin categoría' : c;
+};
+
+const normalizarSexo = (sexo: string | null) => {
+    const s = (sexo ?? '').trim();
+    return s === '' ? 'Sin especificar' : s;
+};
+
+const uniqueById = (items: Estudiante[]) => {
+    const map = new Map<number, Estudiante>();
+    items.forEach((it) => {
+        if (!map.has(it.id)) map.set(it.id, it);
+    });
+    return Array.from(map.values());
+};
+
+const normalizarGrado = (grado: number | null | undefined, categoria?: string | null) => {
+    if (grado != null && grado > 0) return String(grado);
+
+    const c = (categoria ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const rangoPorCategoria: Record<string, string> = {
+        superpeque: '1-2',
+        peque: '3-4',
+        benjamin: '5-6',
+        cadete: '7-8',
+        junior: '9-10',
+        senior: '11-12',
+    };
+
+    if (c && c !== 'nocategoria' && c !== 'sin categoria' && rangoPorCategoria[c]) {
+        return rangoPorCategoria[c];
+    }
+
+    return 'Sin grado';
+};
+
 export function P_GenerarListaVille() {
     const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
     const [loading, setLoading] = useState(false);
     const [columnasSeleccionadas, setColumnasSeleccionadas] = useState<string[]>(['Nombre', 'Escuela', 'Grado']);
-    const [agruparPorCategoria, setAgruparPorCategoria] = useState(false);
-    const [agruparPorSexo, setAgruparPorSexo] = useState(false);
+    const [agruparPor, setAgruparPor] = useState<string[]>([]);
     const [tablasGeneradas, setTablasGeneradas] = useState<GrupoEstudiantes[]>([]);
+    const colorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
+    const tableTextColor = colorScheme === 'dark' ? '#e5e7eb' : '#111827';
+    const tableHeaderColor = colorScheme === 'dark' ? '#f9fafb' : '#0f172a';
 
-    // Obtener el ID del profesor del localStorage
+    // IMPORTANTE: este endpoint espera user_id (tabla users), no profesor_id.
+    // Usamos userId como principal para evitar mezclar estudiantes de otro profesor.
     const profesorId = localStorage.getItem('userId') || localStorage.getItem('profesorId');
 
     useEffect(() => {
@@ -102,43 +149,59 @@ export function P_GenerarListaVille() {
             return;
         }
 
+        const estudiantesUnicos = uniqueById(estudiantes);
+        const agruparPorCategoria = agruparPor.includes('categoria');
+        const agruparPorSexo = agruparPor.includes('sexo');
+
         if (!agruparPorCategoria && !agruparPorSexo) {
             // Si no hay agrupación, mostrar todos los estudiantes en una sola tabla
             setTablasGeneradas([{
                 key: 'todos',
                 label: 'Todos los estudiantes',
-                estudiantes: estudiantes.sort((a, b) => {
-                    // Ordenar por categoría primero, luego por nombre
-                    if (a.categoria && b.categoria && a.categoria !== b.categoria) {
-                        return a.categoria.localeCompare(b.categoria);
+                estudiantes: estudiantesUnicos.sort((a, b) => {
+                    // Ordenar por categoría, grado y nombre
+                    const categoriaA = normalizarCategoria(a.categoria);
+                    const categoriaB = normalizarCategoria(b.categoria);
+                    if (categoriaA !== categoriaB) {
+                        return categoriaA.localeCompare(categoriaB);
+                    }
+                    const gradoA = a.grado ?? Number.MAX_SAFE_INTEGER;
+                    const gradoB = b.grado ?? Number.MAX_SAFE_INTEGER;
+                    if (gradoA !== gradoB) {
+                        return gradoA - gradoB;
                     }
                     return a.nombre_estudiante.localeCompare(b.nombre_estudiante);
                 })
             }]);
+            notifications.show({
+                title: 'Tabla generada',
+                message: `Se generó 1 tabla con ${estudiantesUnicos.length} estudiantes (sin duplicados).`,
+                color: 'teal',
+            });
             return;
         }
 
         // Crear mapa para agrupar estudiantes
         const grupos = new Map<string, { label: string; estudiantes: Estudiante[] }>();
 
-        estudiantes.forEach(estudiante => {
+        estudiantesUnicos.forEach(estudiante => {
             let key = '';
             let label = '';
 
             if (agruparPorCategoria && agruparPorSexo) {
                 // Agrupar por categoría y sexo
-                const categoria = estudiante.categoria || 'Sin categoría';
-                const sexo = estudiante.sexo || 'Sin especificar';
+                const categoria = normalizarCategoria(estudiante.categoria);
+                const sexo = normalizarSexo(estudiante.sexo);
                 key = `${categoria}_${sexo}`;
                 label = `${categoria} - ${sexo}`;
             } else if (agruparPorCategoria) {
                 // Agrupar solo por categoría
-                const categoria = estudiante.categoria || 'Sin categoría';
+                const categoria = normalizarCategoria(estudiante.categoria);
                 key = categoria;
                 label = categoria;
             } else if (agruparPorSexo) {
                 // Agrupar solo por sexo
-                const sexo = estudiante.sexo || 'Sin especificar';
+                const sexo = normalizarSexo(estudiante.sexo);
                 key = sexo;
                 label = sexo;
             }
@@ -155,8 +218,10 @@ export function P_GenerarListaVille() {
             label: grupo.label,
             estudiantes: grupo.estudiantes.sort((a, b) => {
                 // Ordenar por grado (ascendente), luego por nombre
-                if (a.grado && b.grado && a.grado !== b.grado) {
-                    return a.grado - b.grado;
+                const gradoA = a.grado ?? Number.MAX_SAFE_INTEGER;
+                const gradoB = b.grado ?? Number.MAX_SAFE_INTEGER;
+                if (gradoA !== gradoB) {
+                    return gradoA - gradoB;
                 }
                 return a.nombre_estudiante.localeCompare(b.nombre_estudiante);
             })
@@ -164,17 +229,22 @@ export function P_GenerarListaVille() {
 
         // Ordenar grupos por categoría (si aplica) y luego por sexo
         gruposArray.sort((a, b) => {
-            const categoriaA = a.estudiantes[0]?.categoria || '';
-            const categoriaB = b.estudiantes[0]?.categoria || '';
+            const categoriaA = normalizarCategoria(a.estudiantes[0]?.categoria || '');
+            const categoriaB = normalizarCategoria(b.estudiantes[0]?.categoria || '');
             if (categoriaA !== categoriaB) {
                 return categoriaA.localeCompare(categoriaB);
             }
-            const sexoA = a.estudiantes[0]?.sexo || '';
-            const sexoB = b.estudiantes[0]?.sexo || '';
+            const sexoA = normalizarSexo(a.estudiantes[0]?.sexo || '');
+            const sexoB = normalizarSexo(b.estudiantes[0]?.sexo || '');
             return sexoA.localeCompare(sexoB);
         });
 
         setTablasGeneradas(gruposArray);
+        notifications.show({
+            title: 'Tablas actualizadas',
+            message: `Se generaron ${gruposArray.length} tabla(s) con ${estudiantesUnicos.length} estudiantes sin duplicados.`,
+            color: 'teal',
+        });
     };
 
     // Función para exportar a Excel
@@ -194,7 +264,8 @@ export function P_GenerarListaVille() {
             const datos = grupo.estudiantes.map(est => {
                 const fila: any = {};
                 columnasSeleccionadas.forEach(col => {
-                    switch (col) {
+                    const colKey = col.trim();
+                    switch (colKey) {
                         case 'Nombre':
                             fila['Nombre'] = est.nombre_estudiante;
                             break;
@@ -202,7 +273,7 @@ export function P_GenerarListaVille() {
                             fila['Escuela'] = est.nombre_escuela || '-';
                             break;
                         case 'Grado':
-                            fila['Grado'] = est.grado || '-';
+                            fila['Grado'] = normalizarGrado(est.grado, est.categoria);
                             break;
                     }
                 });
@@ -247,7 +318,8 @@ export function P_GenerarListaVille() {
             grupo.estudiantes.forEach(est => {
                 const fila: string[] = [];
                 columnasSeleccionadas.forEach(col => {
-                    switch (col) {
+                    const colKey = col.trim();
+                    switch (colKey) {
                         case 'Nombre':
                             fila.push(`"${est.nombre_estudiante}"`);
                             break;
@@ -255,7 +327,7 @@ export function P_GenerarListaVille() {
                             fila.push(`"${est.nombre_escuela || '-'}"`);
                             break;
                         case 'Grado':
-                            fila.push(`${est.grado || '-'}`);
+                            fila.push(`${normalizarGrado(est.grado, est.categoria)}`);
                             break;
                     }
                 });
@@ -292,7 +364,7 @@ export function P_GenerarListaVille() {
                     <Title order={3}>Configurar datos para examen</Title>
                     <Text c="dimmed">Configure los datos según el orden de la organización internacional</Text>
                     <Grid mt={15}>
-                        <Grid.Col span={{ base: 12, md: 5 }}>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
                             <MultiSelect
                                 label="Seleccione las columnas"
                                 placeholder="Seleccione las columnas a generar"
@@ -300,45 +372,48 @@ export function P_GenerarListaVille() {
                                 value={columnasSeleccionadas}
                                 onChange={setColumnasSeleccionadas}
                                 clearable
+                                size="sm"
                             />
                         </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 7 }}>
-                            <Text fw={400} ml={{ base: 0, md: 30 }} size="sm" mb="xs" mt={{ base: 'md', md: 0 }}>Agrupar por ...</Text>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
                             <Flex
                                 mih={50}
                                 gap="md"
-                                justify={{ base: 'flex-start', sm: 'flex-start' }}
-                                align="flex-start"
-                                direction={{ base: 'column', sm: 'row' }}
-                                wrap="wrap"
+                                justify="flex-start"
+                                align="flex-end"
+                                direction="column"
+                                wrap="nowrap"
                             >
-                                <Checkbox
-                                    ml={{ base: 0, md: 20 }}
-                                    label="Categoría"
-                                    mt={10}
-                                    checked={agruparPorCategoria}
-                                    onChange={(e) => setAgruparPorCategoria(e.currentTarget.checked)}
+                                <MultiSelect
+                                    label="Seleccione agrupación"
+                                    data={opcionesAgrupacion}
+                                    value={agruparPor}
+                                    onChange={setAgruparPor}
+                                    placeholder="Sin agrupación"
+                                    clearable
+                                    size="sm"
+                                    style={{ minWidth: 220, width: '100%' }}
                                 />
-                                <Checkbox
-                                    label="Sexo"
-                                    mt={10}
-                                    checked={agruparPorSexo}
-                                    onChange={(e) => setAgruparPorSexo(e.currentTarget.checked)}
-                                />
-                                <Group mt={5} ml={{ base: 0, md: 20 }} w={{ base: '100%', sm: 'auto' }}>
-                                    <Button
-                                        variant="filled"
-                                        rightSection={<IconTableFilled size={16} />}
-                                        onClick={generarTablas}
-                                        loading={loading}
-                                        style={{ width: '100%' }}
-                                    >
-                                        Generar tabla
-                                    </Button>
-                                </Group>
                             </Flex>
                         </Grid.Col>
                     </Grid>
+                    <Group mt="md" justify="flex-start" wrap="wrap">
+                        <Button
+                            variant="filled"
+                            rightSection={<IconTableFilled size={16} />}
+                            onClick={generarTablas}
+                            loading={loading}
+                        >
+                            Generar tabla
+                        </Button>
+                        <Button
+                            variant="light"
+                            color="gray"
+                            onClick={() => setTablasGeneradas([])}
+                        >
+                            Limpiar
+                        </Button>
+                    </Group>
                 </Card>
 
                 {tablasGeneradas.length > 0 && (
@@ -368,22 +443,23 @@ export function P_GenerarListaVille() {
                             <Stack gap="xl">
                                 {tablasGeneradas.map((grupo) => (
                                     <Card key={grupo.key} withBorder p="md">
-                                        <Title order={4} mb="md">{grupo.label}</Title>
+                                        <Title order={4} mb="md">{grupo.label} ({grupo.estudiantes.length})</Title>
                                         <Table.ScrollContainer minWidth={500} type="native">
                                             <Table stickyHeader stickyHeaderOffset={60} highlightOnHover>
                                                 <Table.Thead>
                                                     <Table.Tr>
                                                         {columnasSeleccionadas.map((col) => (
-                                                            <Table.Th key={col} style={{ padding: '12px 16px' }}>{col}</Table.Th>
+                                                            <Table.Th key={col} style={{ padding: '12px 16px', color: tableHeaderColor }}>{col}</Table.Th>
                                                         ))}
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
                                                     {grupo.estudiantes.map((estudiante) => (
-                                                        <Table.Tr key={estudiante.id}>
+                                                        <Table.Tr key={`${grupo.key}-${estudiante.id}`}>
                                                             {columnasSeleccionadas.map((col) => {
                                                                 let contenido = '';
-                                                                switch (col) {
+                                                                const colKey = col.trim();
+                                                                switch (colKey) {
                                                                     case 'Nombre':
                                                                         contenido = estudiante.nombre_estudiante;
                                                                         break;
@@ -391,10 +467,14 @@ export function P_GenerarListaVille() {
                                                                         contenido = estudiante.nombre_escuela || '-';
                                                                         break;
                                                                     case 'Grado':
-                                                                        contenido = estudiante.grado?.toString() || '-';
+                                                                        contenido = normalizarGrado(estudiante.grado, estudiante.categoria);
                                                                         break;
                                                                 }
-                                                                return <Table.Td key={col} style={{ padding: '12px 16px' }}>{contenido}</Table.Td>;
+                                                                return (
+                                                                    <Table.Td key={col} style={{ padding: '12px 16px', color: tableTextColor }}>
+                                                                        {contenido && contenido.trim() !== '' ? contenido : '—'}
+                                                                    </Table.Td>
+                                                                );
                                                             })}
                                                         </Table.Tr>
                                                     ))}

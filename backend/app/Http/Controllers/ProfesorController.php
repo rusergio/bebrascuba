@@ -417,8 +417,16 @@ class ProfesorController extends Controller
 
     public function listarEstudiantes($id_profesor) {
         try {
-            // PASO 1: Verificar si el usuario existe
+            // PASO 1: Verificar si el parámetro corresponde a user_id.
+            // Compatibilidad: si viene profesor_id, convertirlo a su user_id.
             $user = User::find($id_profesor);
+            if (!$user) {
+                $profTmp = Profesor::find($id_profesor);
+                if ($profTmp) {
+                    $user = User::find($profTmp->user_id);
+                    $id_profesor = $profTmp->user_id;
+                }
+            }
             
             if (!$user) {
                 return response()->json([
@@ -481,6 +489,13 @@ class ProfesorController extends Controller
                 )
                 ->orderBy('e.nombre')
                 ->get();
+
+            // Evitar duplicados del mismo estudiante en distintas ediciones:
+            // conservar solo la inscripción más reciente por estudiante.
+            $estudiantes = $estudiantes
+                ->sortByDesc('edicion')
+                ->unique('id')
+                ->values();
     
             // Si no hay estudiantes
             if ($estudiantes->isEmpty()) {
@@ -517,6 +532,7 @@ class ProfesorController extends Controller
                     ->join('escuelas as esc', 'ee.id_escuela', '=', 'esc.id')
                     ->leftJoin('categorias as cat', 'ee.id_categoria', '=', 'cat.id')
                     ->where('ee.id_estudiante', $estudiante->id)
+                    ->where('ee.edicion', $estudiante->edicion)
                     ->whereNull('esc.deleted_at')
                     ->select(
                         'esc.nombre as nombre_escuela',
@@ -526,8 +542,28 @@ class ProfesorController extends Controller
                         'ee.medalla',
                         'ee.edicion'
                     )
-                    ->orderBy('ee.edicion', 'desc')
+                    ->orderBy('ee.id', 'desc')
                     ->first();
+
+                // Fallback: si no existe relación en esa edición exacta, usar la más reciente disponible
+                if (!$estudianteEscuela) {
+                    $estudianteEscuela = DB::table('estudiante_escuela as ee')
+                        ->join('escuelas as esc', 'ee.id_escuela', '=', 'esc.id')
+                        ->leftJoin('categorias as cat', 'ee.id_categoria', '=', 'cat.id')
+                        ->where('ee.id_estudiante', $estudiante->id)
+                        ->whereNull('esc.deleted_at')
+                        ->select(
+                            'esc.nombre as nombre_escuela',
+                            'ee.grado',
+                            'cat.nombre_cuba as categoria',
+                            'ee.puntuacion',
+                            'ee.medalla',
+                            'ee.edicion'
+                        )
+                        ->orderBy('ee.edicion', 'desc')
+                        ->orderBy('ee.id', 'desc')
+                        ->first();
+                }
     
                 $estudiantesConDetalles[] = [
                     'id' => $estudiante->id,

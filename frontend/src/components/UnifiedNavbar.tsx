@@ -3,13 +3,10 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconStar, IconChevronDown, IconLogout, IconClipboardText, IconEyeglass, IconUser, IconUserShare, IconEyeSearch, IconUsersGroup, IconBuilding, IconClipboardList, IconFileTypeDoc, IconMessage, IconUserPlus, IconUsersPlus, IconFileDescription, IconUserEdit } from '@tabler/icons-react';
 import classes from '../styles/NavbarStyles.module.css';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import cx from 'clsx';
 import { ActionToggle } from './ActionToggle';
 import { useUserContext, useUserRoles } from '../context/UserContext';
-import axios from 'axios';
-
-axios.defaults.baseURL = 'http://localhost:8000';
 
 // Definición de tipos para los enlaces
 interface SimpleLink {
@@ -121,60 +118,9 @@ const getUserProfilePath = () => {
 export function UnifiedNavbar() {
     const [opened, { toggle, close }] = useDisclosure(false);
     const [userMenuOpened, setUserMenuOpened] = useState(false);
-    const [userPhoto, setUserPhoto] = useState<string | null>(() => {
-        const photo = localStorage.getItem('userPhoto');
-        // Si la foto es solo una ruta relativa, construir la URL completa
-        if (photo && !photo.startsWith('http') && !photo.startsWith('/storage')) {
-            return photo.startsWith('storage/') ? `http://localhost:8000/${photo}` : `http://localhost:8000/storage/${photo}`;
-        }
-        return photo;
-    });
     const navigate = useNavigate();
     const { user } = useUserContext();
     const { activeRole } = useUserRoles();
-
-    // Cargar foto del usuario al iniciar y escuchar cambios
-    useEffect(() => {
-        const userId = localStorage.getItem('userId');
-        
-        const loadUserPhoto = async () => {
-            if (userId) {
-                try {
-                    const response = await axios.get(`/api/usuarios/${userId}/foto-perfil`);
-                    if (response.data.success && response.data.photo_url) {
-                        setUserPhoto(response.data.photo_url);
-                        localStorage.setItem('userPhoto', response.data.photo_url);
-                    }
-                } catch (error) {
-                    // Si falla, usar localStorage
-                    const photo = localStorage.getItem('userPhoto');
-                    if (photo) {
-                        setUserPhoto(photo);
-                    }
-                }
-            } else {
-                const photo = localStorage.getItem('userPhoto');
-                if (photo) {
-                    setUserPhoto(photo);
-                }
-            }
-        };
-
-        loadUserPhoto();
-
-        const handlePhotoUpdate = () => {
-            const photo = localStorage.getItem('userPhoto');
-            if (photo) {
-                setUserPhoto(photo);
-            } else if (userId) {
-                // Recargar desde el backend
-                loadUserPhoto();
-            }
-        };
-        
-        window.addEventListener('userPhotoUpdated', handlePhotoUpdate);
-        return () => window.removeEventListener('userPhotoUpdated', handlePhotoUpdate);
-    }, []);
 
     // Obtener roles con IDs desde localStorage o contexto
     const getUserRolesWithIds = (): Array<{ id: number; rol: string }> => {
@@ -390,15 +336,13 @@ export function UnifiedNavbar() {
                                 >
                                     <Group gap={7}>
                                         <Avatar
-                                            src={userPhoto || undefined}
                                             radius="xl"
                                             size={'sm'}
                                         >
-                                            {!userPhoto && (
-                                                <Text size="xs" fw={700}>
-                                                    {localStorage.getItem('userName')?.charAt(0).toUpperCase() || 'U'}
-                                                </Text>
-                                            )}
+                                            <Text size="xs" fw={700}>
+                                                {(localStorage.getItem('userName')?.charAt(0).toUpperCase() || 'U') +
+                                                    (localStorage.getItem('userLastName')?.charAt(0).toUpperCase() || '')}
+                                            </Text>
                                         </Avatar>
                         <Text fw={500} size="sm" lh={1} mr={3}>
                             {userName}

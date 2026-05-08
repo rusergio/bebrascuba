@@ -1,49 +1,76 @@
-# bebrascuba/docker-compose.yml
-
-# version: "3.8"
+# BebrasCuba — desenvolvemento (Laravel + Vite + Postgres)
+# Raíz: c:\laragon\www\bebrascuba2
+#
+# Uso:
+#   docker compose up --build
+#   Migrações (primeira vez): docker compose exec backend php artisan migrate --no-interaction
 
 services:
-  frontend:
-    build:
-      context: ./gui
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./gui:/app
-    depends_on:
-      - backend
-  backend:
-    build:
-      context: ./api
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./api:/var/www
-    environment:
-      APP_ENV: local
-      APP_DEBUG: true
-      APP_URL: http://localhost:8000
-      DB_CONNECTION: pgsql
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: bebras_cuba
-      DB_USERNAME: postgres
-      DB_PASSWORD: 2024
-      FRONTEND_URL: http://localhost:5173
-      SANCTUM_STATEFUL_DOMAINS: localhost:5173
-    depends_on:
-      - db
-
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: bebras_cuba
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 2024
+      POSTGRES_DB: ${DB_DATABASE:-bebrascuba}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-bebrascuba}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www
+      - backend_vendor:/var/www/vendor
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      FRONTEND_URL: http://localhost:5173
+      SANCTUM_STATEFUL_DOMAINS: localhost:5173,localhost,127.0.0.1
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-bebrascuba}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stderr
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-false}
+      AUTO_SEED: ${AUTO_SEED:-false}
+      SEED_EDICION_2025: ${SEED_EDICION_2025:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      VITE_API_ORIGIN: http://localhost:8000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
+  backend_vendor:
+  frontend_node_modules:

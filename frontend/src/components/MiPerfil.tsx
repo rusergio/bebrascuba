@@ -46,52 +46,9 @@ export function MiPerfil() {
           setUpdateRol(storedRole);
         }
         
-        // Cargar foto actual del usuario desde el backend
-        const loadUserPhoto = async () => {
-            if (userId) {
-                try {
-                    console.log('🔄 Cargando foto del usuario:', userId);
-                    const response = await axios.get(`/api/usuarios/${userId}/foto-perfil`);
-                    console.log('📸 Respuesta del backend:', response.data);
-                    
-                    if (response.data.success && response.data.photo_url) {
-                        let photoUrl = response.data.photo_url;
-                        
-                        // Si la URL viene con /storage/storage/, corregirla
-                        if (photoUrl && photoUrl.includes('/storage/storage/')) {
-                            photoUrl = photoUrl.replace('/storage/storage/', '/storage/');
-                        }
-                        
-                        console.log('📸 URL de foto:', photoUrl);
-                        setCurrentPhoto(photoUrl);
-                        localStorage.setItem('userPhoto', photoUrl);
-                    } else {
-                        console.log('⚠️ No hay foto en el backend, usando localStorage');
-                        // Si no hay foto en el backend, intentar cargar desde localStorage
-                        const userPhoto = localStorage.getItem('userPhoto');
-                        if (userPhoto) {
-                            setCurrentPhoto(userPhoto);
-                        }
-                    }
-                } catch (error: any) {
-                    console.error('❌ Error al cargar foto:', error);
-                    // Si falla, intentar cargar desde localStorage
-                    const userPhoto = localStorage.getItem('userPhoto');
-                    if (userPhoto) {
-                        setCurrentPhoto(userPhoto);
-                    }
-                }
-            } else {
-                console.log('⚠️ No hay userId, usando localStorage');
-                // Si no hay userId, cargar desde localStorage
-                const userPhoto = localStorage.getItem('userPhoto');
-                if (userPhoto) {
-                    setCurrentPhoto(userPhoto);
-                }
-            }
-        };
-        
-        loadUserPhoto();
+        // Modo liviano temporal: avatar solo con iniciales (sin foto remota)
+        setCurrentPhoto(null);
+        localStorage.removeItem('userPhoto');
     }, [userId]);
 
     // Debug: Log cuando cambia currentPhoto
@@ -536,7 +493,6 @@ export function MiPerfil() {
                     <Grid.Col span={5}>
                         <Paper radius="md" withBorder p="lg" bg="var(--mantine-color-body)">
                             <Avatar
-                                src={preview || currentPhoto || undefined}
                                 size={120}
                                 radius={120}
                                 mx="auto"
@@ -592,46 +548,9 @@ export function MiPerfil() {
                                 </Stack>
                             )}
                             
-                            <Group justify="center" mt={10}>
-                                <FileButton
-                                    onChange={handleFileSelect}
-                                    accept="image/png,image/jpeg,image/jpg"
-                                >
-                                    {(props) => (
-                                        <ActionIcon
-                                            size="lg"
-                                            color="blue"
-                                            variant="filled"
-                                            aria-label="Subir foto"
-                                            {...props}
-                                            loading={loadingPhoto}
-                                        >
-                                            <IconPhoto style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                                        </ActionIcon>
-                                    )}
-                                </FileButton>
-                            </Group>
-
-                            {selectedFile && (
-                                <Group justify="center" mt="sm">
-                                    <Button
-                                        size="xs"
-                                        onClick={handleUploadPhoto}
-                                        loading={loadingPhoto}
-                                    >
-                                        Guardar foto
-                                    </Button>
-                                    <Button
-                                        size="xs"
-                                        color="red"
-                                        variant="outline"
-                                        onClick={handleCancelPhoto}
-                                        disabled={loadingPhoto}
-                                    >
-                                        Cancelar
-                                    </Button>
-                                </Group>
-                            )}
+                            <Text size="xs" c="dimmed" ta="center" mt={10}>
+                                Avatar temporal por iniciales (imagen de perfil desactivada por rendimiento)
+                            </Text>
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={7}>

@@ -115,24 +115,56 @@ La plataforma cuenta con un sistema de roles jerárquico que permite diferentes 
 git clone https://github.com/rusergio/bebrascuba.git
 cd bebrascuba
 
-# Iniciar los contenedores
-docker-compose up -d
+# 1) Configurar variables para docker compose (raíz del repo)
+cp .env.docker.example .env
 
-# Instalar dependencias del backend
-docker-compose exec backend composer install
+# 2) Construir e iniciar stack completo
+docker compose up --build -d
 
-# Ejecutar migraciones
-docker-compose exec backend php artisan migrate
+# 3) Migraciones (primera vez)
+docker compose exec backend php artisan migrate --no-interaction
 
-# Ejecutar seeders
-docker-compose exec backend php artisan db:seed
+# 4) Seeders (opcional, sin prompts)
+docker compose exec backend sh -c "SEED_WITHOUT_PROMPTS=true php artisan db:seed --no-interaction"
 
-# Instalar dependencias del frontend
-cd frontend
-npm install
+# 5) Ver logs de servicios
+docker compose logs -f backend frontend db
 
-# Iniciar servidor de desarrollo
-npm run dev
+# 6) Apagar stack
+docker compose down
+
+# (Opcional) borrar volúmenes y reset completo
+docker compose down -v
+```
+
+Notas:
+
+- Backend: `http://localhost:8000`
+- Frontend: `http://localhost:5173`
+- DB host dentro de Docker: `db`
+- Si quieres automigrar/autoseed al iniciar backend, ajusta en `.env` raíz:
+  - `AUTO_MIGRATE=true`
+  - `AUTO_SEED=true`
+  - `SEED_EDICION_2025=true|false`
+
+### Deploy Producción (Docker)
+
+```bash
+# 1) Preparar variables de producción
+cp .env.prod.example .env
+# Editar .env con APP_KEY, dominio y credenciales reales
+
+# 2) Levantar stack de producción
+docker compose -f docker-compose.prod.yml --env-file .env up --build -d
+
+# 3) Migrar (si AUTO_MIGRATE=false)
+docker compose -f docker-compose.prod.yml --env-file .env exec backend php artisan migrate --force --no-interaction
+
+# 4) Seed (opcional)
+docker compose -f docker-compose.prod.yml --env-file .env exec backend sh -c "SEED_WITHOUT_PROMPTS=true php artisan db:seed --force --no-interaction"
+
+# 5) Logs
+docker compose -f docker-compose.prod.yml --env-file .env logs -f
 ```
 
 ### Desarrollo Local

@@ -381,6 +381,28 @@ class UserController extends Controller
             // Obtener roles del usuario
             $roles = $user->roles()->select('roles.id', 'rol', 'descripcion', 'estado')->get();
 
+            // Ordenar roles por prioridad para definir un "rol principal" consistente
+            $rolePriority = [
+                'Administrador',
+                'Coordinador Nacional',
+                'Coordinador Asistente',
+                'Representante MINED/MES',
+                'Representante Provincial MINED',
+                'Coordinador Provincial MINED',
+                'Coordinador Municipal MINED',
+                'Elaborador Tareas Bebras',
+                'Revisor Tareas Bebras',
+                'Colaborador Bebras',
+                'Colaborador Universitario Bebras',
+                'Responsable Colaborador Universitario Bebras',
+                'Profesor',
+                'Estudiante',
+            ];
+            $rolePriorityMap = array_flip($rolePriority);
+            $roles = $roles
+                ->sortBy(fn ($role) => $rolePriorityMap[$role->rol] ?? 999)
+                ->values();
+
             if ($roles->isEmpty()) {
                 return response()->json([
                     'success' => false,
@@ -390,9 +412,25 @@ class UserController extends Controller
 
             // Verificar si el usuario tiene el rol de Profesor
             $tieneRolProfesor = $roles->contains('rol', 'Profesor');
+            // Si además tiene un rol de gestión, no bloquear login por reglas exclusivas de profesor
+            $rolesGestion = [
+                'Administrador',
+                'Coordinador Nacional',
+                'Coordinador Asistente',
+                'Representante MINED/MES',
+                'Representante Provincial MINED',
+                'Coordinador Provincial MINED',
+                'Coordinador Municipal MINED',
+                'Elaborador Tareas Bebras',
+                'Revisor Tareas Bebras',
+                'Colaborador Bebras',
+                'Colaborador Universitario Bebras',
+                'Responsable Colaborador Universitario Bebras',
+            ];
+            $tieneRolGestion = $roles->pluck('rol')->intersect($rolesGestion)->isNotEmpty();
 
             // ===== VALIDACIONES ESPECÍFICAS PARA PROFESORES =====
-            if ($tieneRolProfesor) {
+            if ($tieneRolProfesor && !$tieneRolGestion) {
                 \Log::info('Intentando login de profesor', ['user_id' => $user->id]);
 
                 // 1. Verificar si hay una edición abierta

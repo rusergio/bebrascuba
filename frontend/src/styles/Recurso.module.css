@@ -1,28 +1,190 @@
-.card {
-    height: rem(300px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
-    background-size: cover;
-    background-position: center;
-    background-image: url(https://images.unsplash.com/photo-1508193638397-1c4234db14d8?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&q=80);
+/* Paleta referencia: navy #2B5797, fondo claro #E8F0FE, texto #666 */
+
+.page {
+  min-height: 70vh;
+  background: #f8fafc;
+}
+
+/* Hero só com degradê claro (sem imagem de fundo) */
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(165deg, #dbeafe 0%, #e8f4fc 45%, #f0f9ff 80%, #ffffff 100%);
+  min-height: rem(200px);
+  padding: rem(40px) 0 rem(44px);
+  border-bottom: 1px solid rgba(43, 87, 151, 0.08);
+}
+
+.heroInner {
+  position: relative;
+  z-index: 1;
+}
+
+.heroText {
+  max-width: rem(560px);
+  padding-right: rem(16px);
+}
+
+.heroTitle {
+  font-size: rem(30px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0;
+  color: #1e3a5f;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    font-size: rem(22px);
   }
-  
-  .title {
-    font-family:
-      Greycliff CF,
-      var(--mantine-font-family);
-    font-weight: 700;
-    color: var(--mantine-color-white);
-    line-height: 1.2;
-    font-size: rem(32px);
-    margin-top: var(--mantine-spacing-xs);
-  }
-  
-  .category {
-    color: var(--mantine-color-white);
-    opacity: 0.7;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
+}
+
+.heroSubtitle {
+  margin-top: rem(12px);
+  font-size: rem(15px);
+  font-weight: 400;
+  line-height: 1.65;
+  max-width: rem(520px);
+  color: #666666;
+}
+
+.searchBar {
+  margin-top: rem(-24px);
+  position: relative;
+  z-index: 2;
+  background: #ffffff;
+  border: 1px solid rgba(43, 87, 151, 0.12);
+  box-shadow: 0 8px 28px rgba(15, 40, 80, 0.08);
+  border-radius: rem(16px);
+  padding: rem(14px) rem(16px);
+}
+
+.searchInner {
+  flex-wrap: wrap;
+  gap: rem(12px);
+}
+
+.yearSelect {
+  flex: 0 0 auto;
+  min-width: rem(160px);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: rem(200px);
+}
+
+.sectionTitle {
+  font-size: rem(22px);
+  font-weight: 800;
+  color: #1e3a5f;
+  margin-top: rem(36px);
+  margin-bottom: rem(8px);
+}
+
+.grid {
+  padding-bottom: rem(56px);
+}
+
+.resourceCard {
+  position: relative;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(43, 87, 151, 0.12);
+  border-radius: rem(14px);
+  padding: rem(20px) rem(20px) rem(18px);
+  box-shadow: 0 4px 18px rgba(15, 40, 80, 0.06);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  overflow: hidden;
+}
+
+.resourceCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(15, 40, 80, 0.1);
+}
+
+.yearBadge {
+  position: absolute;
+  top: rem(16px);
+  left: rem(16px);
+  min-width: rem(48px);
+  min-height: rem(48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2b5797;
+  color: #ffffff;
+  font-size: rem(13px);
+  font-weight: 800;
+  border-radius: rem(8px);
+  line-height: 1;
+  padding: rem(4px);
+}
+
+.novoBadge {
+  position: absolute;
+  top: rem(16px);
+  right: rem(16px);
+}
+
+.cardInner {
+  margin-top: rem(52px);
+  padding-left: rem(4px);
+}
+
+.cardDocIcon {
+  width: rem(72px);
+  height: rem(72px);
+  border-radius: rem(14px);
+  background: #e8f0fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #2b5797;
+}
+
+.cardTitle {
+  font-size: rem(15px);
+  font-weight: 800;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+.cardSub {
+  font-size: rem(13px);
+  font-weight: 600;
+  color: #5a6570;
+  margin-top: rem(4px);
+}
+
+.cardDesc {
+  font-size: rem(13px);
+  color: #666666;
+  line-height: 1.55;
+  margin-top: rem(8px);
+}
+
+.downloadBtn {
+  background-color: #2b5797 !important;
+  color: #ffffff !important;
+}
+
+.downloadBtn:hover {
+  background-color: #234a80 !important;
+}
+
+.empty {
+  max-width: rem(480px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.noResults {
+  text-align: center;
+  padding: rem(40px) rem(16px);
+  color: #666666;
+}

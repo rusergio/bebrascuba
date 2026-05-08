@@ -3,7 +3,6 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconChevronDown, IconUsersGroup, IconUser, IconLogin2, IconStar } from '@tabler/icons-react';
 import classes from '../styles/NavbarStyles.module.css';
 import { Link, NavLink } from 'react-router-dom';
-import { ActionToggle } from './ActionToggle';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 axios.defaults.baseURL = 'http://localhost:8000';
@@ -19,7 +18,6 @@ const links = [
             { link: '/resources', label: 'Profesor', icon: IconUser },
         ],
     },
-    { link: '/geobebras', label: 'GeoBebras' },
 ];
 
 export function BarNavInicial() {
@@ -132,7 +130,6 @@ export function BarNavInicial() {
                     </Group>
                     
                     <Group justify="center">
-                        <ActionToggle />
                         <Button 
                             radius={6} 
                             rightSection={<IconLogin2 size={16} />} 
