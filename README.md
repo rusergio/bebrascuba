@@ -139,9 +139,11 @@ docker compose down -v
 
 Notas:
 
-- Backend: `http://localhost:8000`
-- Frontend: `http://localhost:5173`
+- Puedes usar solo el frontend: `http://localhost:5173` — las rutas `/api`, `/sanctum` y `/storage` se proxifican al backend (misma URL que el equipo verá al trabajar con Docker).
+- Backend directo (opcional): `http://localhost:8000`
+- Vite en desarrollo: `http://localhost:5173`
 - DB host dentro de Docker: `db`
+- **Equipo:** cada desarrollador clona el repo, copia `.env.docker.example` a `.env` en la raíz, y crea `backend/.env` desde `backend/.env.example` ajustando **PostgreSQL** y `DB_HOST=db` (mismas `DB_DATABASE` / usuario / contraseña que en el `.env` raíz del compose). Así todos arrancan el mismo stack con `docker compose up --build -d`.
 - Si quieres automigrar/autoseed al iniciar backend, ajusta en `.env` raíz:
   - `AUTO_MIGRATE=true`
   - `AUTO_SEED=true`
