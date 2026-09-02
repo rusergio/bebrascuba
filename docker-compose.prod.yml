@@ -17,7 +17,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backend_laravel
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
@@ -46,7 +46,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend_react
       dockerfile: Dockerfile.prod
     restart: unless-stopped
     ports:

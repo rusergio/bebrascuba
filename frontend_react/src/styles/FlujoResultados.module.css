@@ -1,0 +1,21 @@
+.panel {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.pasoItem {
+  display: flex;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+  border-left: 3px solid transparent;
+}
+
+.pasoItemActivo {
+  background: light-dark(var(--mantine-color-yellow-0), var(--mantine-color-dark-6));
+  border-left-color: var(--mantine-color-yellow-6);
+}
+
+.pasoContent {
+  flex: 1;
+  min-width: 0;
+}

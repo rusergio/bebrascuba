@@ -1,0 +1,71 @@
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--mantine-spacing-sm);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.summaryCard {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  border: 2px solid transparent;
+}
+
+.summaryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.summaryCardActive {
+  border-color: var(--mantine-color-yellow-6);
+  background: light-dark(var(--mantine-color-yellow-0), var(--mantine-color-dark-6));
+}
+
+.workflowBar {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.workflowStepper {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.integracionCard {
+  text-align: center;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--mantine-spacing-md);
+}
+
+@media (max-width: 640px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailSection {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+}
+
+.medallaOro {
+  background: var(--mantine-color-yellow-1);
+  color: var(--mantine-color-yellow-9);
+}
+
+.medallaPlata {
+  background: var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+}
+
+.medallaBronce {
+  background: var(--mantine-color-orange-1);
+  color: var(--mantine-color-orange-9);
+}

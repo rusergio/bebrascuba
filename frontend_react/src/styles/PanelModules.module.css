@@ -1,0 +1,50 @@
+.hero {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.hero_blue {
+  background: linear-gradient(135deg, var(--mantine-color-blue-7), var(--mantine-color-cyan-6));
+}
+
+.hero_violet {
+  background: linear-gradient(135deg, var(--mantine-color-violet-7), var(--mantine-color-indigo-6));
+}
+
+.hero_teal {
+  background: linear-gradient(135deg, var(--mantine-color-teal-7), var(--mantine-color-cyan-6));
+}
+
+.hero_orange {
+  background: linear-gradient(135deg, var(--mantine-color-orange-7), var(--mantine-color-yellow-6));
+}
+
+.hero_yellow {
+  background: linear-gradient(135deg, var(--mantine-color-yellow-7), var(--mantine-color-orange-5));
+}
+
+.hero_indigo {
+  background: linear-gradient(135deg, var(--mantine-color-indigo-7), var(--mantine-color-violet-6));
+}
+
+.mainPanel {
+  border-top: none !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+.actionCard {
+  height: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.actionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.placeholderBox {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-lg);
+}

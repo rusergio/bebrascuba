@@ -1,0 +1,97 @@
+.page {
+  min-height: calc(100vh - 60px);
+  background: light-dark(
+    linear-gradient(180deg, var(--mantine-color-teal-0) 0%, var(--mantine-color-gray-0) 220px),
+    linear-gradient(180deg, var(--mantine-color-dark-8) 0%, var(--mantine-color-dark-9) 220px)
+  );
+}
+
+.introBanner {
+  background: light-dark(
+    linear-gradient(135deg, var(--mantine-color-teal-0) 0%, var(--mantine-color-cyan-0) 100%),
+    linear-gradient(135deg, var(--mantine-color-dark-6) 0%, var(--mantine-color-dark-7) 100%)
+  );
+  border: 1px solid light-dark(var(--mantine-color-teal-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-lg);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.countHighlight {
+  text-align: center;
+  min-width: 100px;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
+  border: 2px solid light-dark(var(--mantine-color-teal-3), var(--mantine-color-teal-8));
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.countNumber {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  color: light-dark(var(--mantine-color-teal-7), var(--mantine-color-teal-3));
+}
+
+.statCard {
+  text-align: center;
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.statCardPrimary {
+  border-color: light-dark(var(--mantine-color-teal-4), var(--mantine-color-teal-8));
+  background: light-dark(var(--mantine-color-teal-0), var(--mantine-color-dark-6));
+}
+
+.uploadSection {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border: 2px dashed light-dark(var(--mantine-color-teal-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-lg);
+  margin-bottom: var(--mantine-spacing-lg);
+  transition: border-color 0.2s ease;
+}
+
+.uploadSection:focus-within {
+  border-color: light-dark(var(--mantine-color-teal-5), var(--mantine-color-teal-7));
+}
+
+.toolbar {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+.tableWrap {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.rowSelected {
+  background: light-dark(var(--mantine-color-teal-0), var(--mantine-color-dark-5)) !important;
+}
+
+.descCell {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--mantine-spacing-xl);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.sectionHeader {
+  margin-bottom: var(--mantine-spacing-md);
+}

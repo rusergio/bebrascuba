@@ -1,0 +1,208 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(2.5rem, 5vw, 4rem);
+  scroll-margin-top: rem(84px);
+  background: light-dark(
+    linear-gradient(180deg, var(--mantine-color-blue-0) 0%, transparent 55%),
+    linear-gradient(180deg, var(--mantine-color-dark-8) 0%, transparent 55%)
+  );
+}
+
+.header {
+  text-align: center;
+  max-width: rem(640px);
+  margin-inline: auto;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-3));
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
+.title {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 var(--mantine-spacing-sm);
+}
+
+.description {
+  margin: 0 auto;
+  max-width: rem(520px);
+  color: var(--mantine-color-dimmed);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  gap: var(--mantine-spacing-lg);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: $mantine-breakpoint-md) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  --accent: var(--mantine-color-blue-6);
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  box-shadow: light-dark(0 8px 24px rgba(15, 23, 42, 0.04), none);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+  animation: cardIn 0.55s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: light-dark(
+    0 16px 36px rgba(15, 23, 42, 0.1),
+    0 12px 28px rgba(0, 0, 0, 0.35)
+  );
+}
+
+.cardBlue {
+  --accent: var(--mantine-color-blue-6);
+}
+
+.cardTeal {
+  --accent: var(--mantine-color-teal-6);
+}
+
+.cardCyan {
+  --accent: var(--mantine-color-cyan-6);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-sm);
+}
+
+.iconWrap {
+  width: rem(52px);
+  height: rem(52px);
+  border-radius: var(--mantine-radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  transition: transform 0.28s ease, background 0.28s ease;
+}
+
+.card:hover .iconWrap {
+  transform: scale(1.06);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.step {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+.cardTitle {
+  font-size: rem(1.2rem);
+  font-weight: 750;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.cardBody {
+  margin: 0;
+  color: var(--mantine-color-dimmed);
+  line-height: 1.6;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: auto;
+}
+
+.point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.45;
+}
+
+.bullet {
+  flex-shrink: 0;
+  width: rem(18px);
+  height: rem(18px);
+  margin-top: 1px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.footerHint {
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  text-align: center;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+}
+
+.footerHint a {
+  color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-3));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footerHint a:hover {
+  text-decoration: underline;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .card:hover,
+  .card:hover .iconWrap {
+    transform: none;
+  }
+}

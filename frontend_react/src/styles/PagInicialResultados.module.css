@@ -1,0 +1,42 @@
+.section {
+  padding-top: var(--mantine-spacing-xl);
+  padding-bottom: calc(var(--mantine-spacing-xl) * 2);
+  scroll-margin-top: rem(84px);
+}
+
+.headerPaper {
+  border: 1px solid var(--mantine-color-default-border);
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.tableCard {
+  overflow: hidden;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tableWrap :global(thead tr) {
+  background: var(--mantine-color-default-hover);
+}
+
+.tableWrap :global(thead th) {
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tableWrap :global(tfoot tr) {
+  background: var(--mantine-color-blue-light);
+  font-weight: 600;
+}

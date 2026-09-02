@@ -1,0 +1,442 @@
+.page {
+  --clave-ink: #07222b;
+  --clave-sea: #0d7377;
+  --clave-foam: #e8f6f4;
+  --clave-sand: #f7f4ef;
+  --clave-coral: #e07a5f;
+  --clave-brand: 'Fraunces', Georgia, serif;
+  --clave-ui: 'Outfit', system-ui, sans-serif;
+
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.02fr 0.98fr;
+  font-family: var(--clave-ui);
+  background: var(--clave-foam);
+}
+
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+}
+
+.visual {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  color: white;
+  isolation: isolate;
+}
+
+@media (max-width: 900px) {
+  .visual {
+    min-height: 38vh;
+  }
+}
+
+.visualBg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(155deg, rgba(7, 34, 43, 0.92) 0%, rgba(13, 115, 119, 0.7) 48%, rgba(224, 122, 95, 0.55) 100%),
+    url('../assets/img/banner.jpg') center / cover no-repeat;
+  transform: scale(1.05);
+  animation: claveKen 20s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+.visualMesh {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 18%, rgba(255, 214, 168, 0.22) 0%, transparent 34%),
+    radial-gradient(circle at 86% 78%, rgba(94, 210, 200, 0.2) 0%, transparent 38%),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: auto, auto, 40px 40px, 40px 40px;
+  mask-image: radial-gradient(ellipse 78% 68% at 42% 38%, black 18%, transparent 78%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.visualContent {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  min-height: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  animation: claveRise 0.75s ease both;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+
+.brandName {
+  font-family: var(--clave-brand);
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brandTag {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  font-weight: 500;
+}
+
+.heroCopy {
+  max-width: 30rem;
+  animation: claveRise 0.85s ease 0.1s both;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.headline {
+  font-family: var(--clave-brand);
+  font-size: clamp(2rem, 4.1vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.85rem;
+}
+
+.headlineAccent {
+  color: #ffd6a8;
+}
+
+.lead {
+  margin: 0 0 1.5rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+  max-width: 26rem;
+}
+
+.steps {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.7rem 0.85rem;
+  border-radius: 1rem;
+  background: rgba(7, 34, 43, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.stepActive {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 214, 168, 0.45);
+}
+
+.stepIndex {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.stepActive .stepIndex {
+  background: #ffd6a8;
+  color: #07222b;
+}
+
+.stepDone {
+  opacity: 0.88;
+}
+
+.stepDone .stepIndex {
+  background: #5ed2c8;
+  color: #07222b;
+}
+
+.stepTitle {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.stepHint {
+  font-size: 0.78rem;
+  opacity: 0.78;
+  margin-top: 0.12rem;
+}
+
+.footerMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  animation: claveRise 1s ease 0.2s both;
+}
+
+.chip {
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(7, 34, 43, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 0.8rem;
+  backdrop-filter: blur(8px);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.orbA {
+  width: 190px;
+  height: 190px;
+  right: -48px;
+  top: 16%;
+  background: radial-gradient(circle, rgba(224, 122, 95, 0.58), transparent 70%);
+  animation: claveFloat 8s ease-in-out infinite;
+}
+
+.orbB {
+  width: 150px;
+  height: 150px;
+  left: 7%;
+  bottom: 14%;
+  background: radial-gradient(circle, rgba(94, 210, 200, 0.48), transparent 70%);
+  animation: claveFloat 10s ease-in-out 1s infinite reverse;
+}
+
+@media (max-width: 900px) {
+  .lead,
+  .steps,
+  .footerMeta {
+    display: none;
+  }
+
+  .headline {
+    font-size: 1.7rem;
+  }
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(13, 115, 119, 0.1), transparent 28%),
+    radial-gradient(circle at 8% 92%, rgba(224, 122, 95, 0.1), transparent 32%),
+    linear-gradient(180deg, #f7f4ef 0%, var(--clave-foam) 48%, #eef7f6 100%);
+}
+
+.panelInner {
+  width: 100%;
+  max-width: 440px;
+  animation: claveRise 0.75s ease 0.08s both;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1.35rem;
+  color: var(--clave-sea);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.backLink:hover {
+  opacity: 0.75;
+}
+
+.formCard {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(7, 34, 43, 0.08);
+  border-radius: 1.4rem;
+  padding: clamp(1.45rem, 3vw, 2.1rem);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 24px 50px rgba(7, 34, 43, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.iconBadge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1.1rem;
+  color: white;
+  background: linear-gradient(145deg, #0d7377, #14919b 55%, #e07a5f);
+  box-shadow: 0 12px 24px rgba(13, 115, 119, 0.28);
+}
+
+.formTitle {
+  font-family: var(--clave-brand);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--clave-ink);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.4rem;
+}
+
+.formSubtitle {
+  color: rgba(7, 34, 43, 0.62);
+  font-size: 0.95rem;
+  margin: 0 0 1.35rem;
+  line-height: 1.5;
+}
+
+.progress {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.progressDot {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(13, 115, 119, 0.12);
+}
+
+.progressDotOn {
+  background: linear-gradient(90deg, #0d7377, #e07a5f);
+}
+
+.digitHint {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: rgba(7, 34, 43, 0.55);
+}
+
+.digitCount {
+  font-weight: 600;
+  color: var(--clave-sea);
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #0d7377 0%, #14919b 55%, #0a5c61 100%) !important;
+  border: none !important;
+  height: 46px;
+  font-family: var(--clave-ui);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  box-shadow: 0 10px 24px rgba(13, 115, 119, 0.28);
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(13, 115, 119, 0.34);
+}
+
+.note {
+  margin-top: 1.1rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.9rem;
+  background: rgba(13, 115, 119, 0.08);
+  border: 1px solid rgba(13, 115, 119, 0.14);
+  color: var(--clave-ink);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.pinWrap :global(.mantine-PinInput-root) {
+  justify-content: flex-start;
+  gap: 0.55rem;
+}
+
+.pinToggle {
+  margin-top: 0.75rem;
+}
+
+.successActions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+@keyframes claveRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes claveKen {
+  from {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.1) translate3d(-1.4%, 1%, 0);
+  }
+}
+
+@keyframes claveFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visualBg,
+  .orbA,
+  .orbB,
+  .brandRow,
+  .heroCopy,
+  .footerMeta,
+  .panelInner {
+    animation: none !important;
+  }
+}
+

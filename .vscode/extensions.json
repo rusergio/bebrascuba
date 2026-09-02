@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "rangav.vscode-thunder-client"
+        "rangav.vscode-thunder-client",
+        "cweijan.dbclient-jdbc"
     ]
 }

@@ -1,0 +1,212 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(2.5rem, 5vw, 4rem);
+  background: light-dark(
+    linear-gradient(180deg, transparent 0%, var(--mantine-color-teal-0) 42%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, var(--mantine-color-dark-8) 48%, transparent 100%)
+  );
+}
+
+.header {
+  text-align: center;
+  max-width: rem(640px);
+  margin-inline: auto;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: light-dark(var(--mantine-color-teal-7), var(--mantine-color-teal-3));
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
+.title {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 var(--mantine-spacing-sm);
+}
+
+.description {
+  margin: 0 auto;
+  max-width: rem(540px);
+  color: var(--mantine-color-dimmed);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  gap: var(--mantine-spacing-lg);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: $mantine-breakpoint-sm) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: $mantine-breakpoint-md) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  --accent: var(--mantine-color-blue-6);
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  box-shadow: light-dark(0 8px 24px rgba(15, 23, 42, 0.04), none);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+  animation: cardIn 0.55s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: light-dark(
+    0 16px 36px rgba(15, 23, 42, 0.1),
+    0 12px 28px rgba(0, 0, 0, 0.35)
+  );
+}
+
+.cardBlue {
+  --accent: var(--mantine-color-blue-6);
+}
+
+.cardCyan {
+  --accent: var(--mantine-color-cyan-6);
+}
+
+.cardTeal {
+  --accent: var(--mantine-color-teal-6);
+}
+
+.cardGreen {
+  --accent: var(--mantine-color-green-6);
+}
+
+.cardIndigo {
+  --accent: var(--mantine-color-indigo-6);
+}
+
+.cardViolet {
+  --accent: var(--mantine-color-violet-6);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-sm);
+  margin-bottom: 0.15rem;
+}
+
+.iconWrap {
+  width: rem(48px);
+  height: rem(48px);
+  border-radius: var(--mantine-radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  transition: transform 0.28s ease, background 0.28s ease;
+}
+
+.card:hover .iconWrap {
+  transform: scale(1.06);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.groupTag {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+.category {
+  margin: 0;
+  font-size: rem(1.2rem);
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.alias {
+  margin: 0;
+  font-size: var(--mantine-font-size-sm);
+  color: color-mix(in srgb, var(--accent) 85%, var(--mantine-color-text));
+  font-weight: 600;
+}
+
+.grades {
+  margin: 0.25rem 0 0;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.level {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: var(--mantine-spacing-sm);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.note {
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  text-align: center;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  max-width: rem(520px);
+  margin-inline: auto;
+  line-height: 1.55;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .card:hover,
+  .card:hover .iconWrap {
+    transform: none;
+  }
+}

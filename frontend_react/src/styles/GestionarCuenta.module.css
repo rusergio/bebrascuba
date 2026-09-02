@@ -1,0 +1,41 @@
+.wrapper {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-violet-7) 0%,
+    var(--mantine-color-indigo-6) 45%,
+    var(--mantine-color-cyan-5) 100%
+  );
+}
+
+[data-mantine-color-scheme='dark'] .hero {
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-violet-9) 0%,
+    var(--mantine-color-indigo-8) 45%,
+    var(--mantine-color-cyan-8) 100%
+  );
+}
+
+.formSection {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  transition: box-shadow 0.2s ease;
+}
+
+.formSection:hover {
+  box-shadow: var(--mantine-shadow-sm);
+}

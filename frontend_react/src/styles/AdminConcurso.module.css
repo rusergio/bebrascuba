@@ -1,0 +1,70 @@
+.wrapper {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-grape-8) 0%,
+    var(--mantine-color-violet-7) 45%,
+    var(--mantine-color-indigo-6) 100%
+  );
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+[data-mantine-color-scheme='dark'] .hero {
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-grape-9) 0%,
+    var(--mantine-color-violet-9) 45%,
+    var(--mantine-color-indigo-9) 100%
+  );
+}
+
+.mainPanel {
+  margin-top: 0;
+  border-top: none !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+.formSection {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  transition: box-shadow 0.2s ease;
+}
+
+.formSection:hover {
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.roleHint {
+  border-left: 3px solid var(--mantine-color-grape-5);
+  padding-left: var(--mantine-spacing-md);
+}
+
+.pinRow {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--mantine-spacing-xs);
+}
+
+.pinHint {
+  margin-top: rem(4px);
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-red-6);
+  line-height: 1.4;
+}

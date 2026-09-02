@@ -1,0 +1,920 @@
+<?php
+
+namespace App\Http\Controllers;
+
+// LibrerÃ­as
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+
+// Modelos
+use App\Models\User;
+use App\Models\Edicion;
+use App\Models\Rol;
+use App\Models\RoleUser;
+use App\Models\Profesor;
+use App\Models\Escuela;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use App\Http\Concerns\AuthorizesAccess;
+
+class UserController extends Controller
+{
+    use AuthorizesAccess;
+    /**
+     * Funciones global para todos los usuarios
+     * @author: Rui SÃ©rgio ManÃ©
+     */
+
+    public function actualizar(Request $request, $id)  {
+        // Validar campos permitidos
+        $validator = Validator::make($request->all(), [  
+            'correo' => 'email|unique:profesors,correo,' . $id,  
+            'telefono' => 'unique:profesors,telefono,' . $id,  
+            'provincia' => 'nullable|string',  
+            'municipio' => 'nullable|string',  
+            'escuela' => 'nullable|string',  
+            'esta_activo' => 'boolean',  
+        ], [
+            'correo.unique' => 'Este correo ya estÃ¡ registrado por otro profesor',
+            'telefono.unique' => 'Este nÃºmero de telÃ©fono ya estÃ¡ registrado por otro profesor',
+        ]);
+
+        if ($validator->fails()) {  
+            $data = [  
+                'message' => 'Error en la validaciÃ³n de datos',  
+                'errors' => $validator->errors(),  
+                'status' => 400  
+            ];  
+            return response()->json($data, 400);  
+        }  
+
+        $profesor = Profesor::find($id);
+        
+        if (!$profesor) {
+            return response()->json(['message' => 'Profesor no encontrado', 'status' => 404], 404);
+        }
+
+        // Actualizar solo los campos permitidos
+        $profesor->update([
+            'correo' => $request->input('correo', $profesor->correo),
+            'telefono' => $request->input('telefono', $profesor->telefono),
+            'provincia' => $request->input('provincia', $profesor->provincia),
+            'municipio' => $request->input('municipio', $profesor->municipio),
+            'escuela' => $request->input('escuela', $profesor->escuela),
+            'esta_activo' => $request->input('esta_activo', $profesor->esta_activo),
+        ]);
+
+        $data = [
+            'profesor' => $profesor,
+            'message' => 'Datos del profesor actualizados con Ã©xito',
+            'status' => 200
+        ];
+
+        return response()->json($data, 200);
+    }
+
+    public function cambiarContrasenia(Request $request, $userId)
+    {
+        $request->validate([
+            'contrasenia' => 'required|string|min:8',
+            'reset_token' => 'nullable|string',
+        ]);
+
+        $user = User::findOrFail($userId);
+        $authUser = $request->user();
+
+        if ($authUser) {
+            if (!$this->canAccessUserAccount($authUser, (int) $userId)) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+        } else {
+            $cachedUserId = Cache::get('password_reset:' . $request->reset_token);
+            if (!$request->reset_token || $cachedUserId !== (int) $userId) {
+                return response()->json(['success' => false, 'message' => 'Token de recuperación inválido o expirado'], 401);
+            }
+            Cache::forget('password_reset:' . $request->reset_token);
+        }
+
+        $user->update(['contrasenia' => Hash::make($request->contrasenia)]);
+
+        $profesor = Profesor::where('user_id', $user->id)->first();
+        if ($profesor) {
+            $profesor->update(['perfil_editado' => true]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Contraseña actualizada correctamente']);
+    }
+
+    public function cambiarPin(Request $request, $userId)
+    {
+        $request->validate([
+            'pin' => 'required|string|min:4|max:10',
+        ]);
+
+        $authUser = $request->user();
+        if (!$authUser || !$this->canAccessUserAccount($authUser, (int) $userId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $user = User::findOrFail($userId);
+        $user->update(['pin' => Hash::make($request->pin)]);
+
+        $profesor = Profesor::where('user_id', $user->id)->first();
+        if ($profesor) {
+            $profesor->update(['perfil_editado' => true]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'PIN actualizado correctamente']);
+    }
+    public function cambiarCorreo(Request $request, $userId)
+    {
+        $authUser = $request->user();
+        if (!$authUser || !$this->canAccessUserAccount($authUser, (int) $userId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $request->validate([
+            'correo' => 'required|email|unique:users,correo,' . $userId,
+        ]);
+
+        $user = User::findOrFail($userId);
+        $user->update(['correo' => $request->correo]);
+
+        $profesor = Profesor::where('user_id', $user->id)->first();
+        if ($profesor) {
+            $profesor->update(['perfil_editado' => true]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Correo actualizado correctamente']);
+    }
+
+    public function cambiarNroTelefono(Request $request, $userId)
+    {
+        $authUser = $request->user();
+        if (!$authUser || !$this->canAccessUserAccount($authUser, (int) $userId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $telefono = preg_replace('/\D/', '', $request->input('telefono', ''));
+
+        $request->merge(['telefono' => $telefono]);
+        $request->validate([
+            'telefono' => 'required|string|regex:/^\d{8}$/|unique:users,telefono,' . $userId,
+        ]);
+
+        $user = User::findOrFail($userId);
+        $user->update(['telefono' => $telefono]);
+
+        $profesor = Profesor::where('user_id', $user->id)->first();
+        if ($profesor) {
+            $profesor->update(['perfil_editado' => true]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Teléfono actualizado correctamente']);
+    }
+    // funciÃ³n para verificar el carnet 
+    public function verificarCI($nro_ci){
+
+        $user = User::where('ci', $nro_ci)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Numero de carnet no fue encontrado', 'status' => 404], 404);
+        }
+
+        $data = [
+            'message' => 'Numero de carnet encontrado',
+            'user' => $user,
+            'status' => 200
+        ];
+
+        return response()->json($data, 200);
+    }
+    public function verificarPin(Request $request)
+    {
+        $request->validate([
+            'ci' => 'required|string',
+            'pin' => 'required|string',
+        ]);
+
+        $user = User::where('nro_ci', $request->ci)->first();
+
+        if (!$user || !Hash::check($request->pin, $user->pin)) {
+            return response()->json(['success' => false, 'message' => 'CI o PIN incorrectos'], 401);
+        }
+
+        $resetToken = Str::random(64);
+        Cache::put('password_reset:' . $resetToken, $user->id, now()->addMinutes(15));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PIN verificado',
+            'user' => ['id' => $user->id],
+            'reset_token' => $resetToken,
+        ]);
+    }
+    // funciÃ³n para enviar el link de registro
+    public function enviarLinkRegistro(Request $request) {  
+        // Validar el correo electrÃ³nico  
+        $validated = $request->validate([  
+            'email' => 'required|email',  
+        ]);  
+
+        // URL de registro  
+        $registrationUrl = 'http://localhost:5173/registro';  
+        $email = $validated['email'];  
+
+        try {  
+            // Enviar el correo electrÃ³nico  
+            Mail::send([], [], function ($message) use ($email, $registrationUrl) {  
+                $message->to($email)  
+                        ->from('bebrascuba@uclv.cu', env('APP_NAME'))  
+                        ->subject('Registro en el sistema')  
+                        ->text("Hola, utiliza este enlace para registrarte: $registrationUrl");  
+            });  
+
+            return response()->json(['message' => 'Correo enviado con Ã©xito'], 200);  
+        } catch (\Exception $e) {  
+            // Manejar errores al enviar el correo  
+            return response()->json(['message' => 'Error al enviar el correo: ' . $e->getMessage()], 500);  
+        }  
+    }  
+    // funciÃ³n para actualizar la imagen
+    public function uploadPhoto(Request $request, $id) {
+        $request->validate([
+            'foto_perfil' => 'required|image|mimes:jpeg,png|max:2048',
+        ]);
+
+        $profesor = Profesor::findOrFail($id);
+
+        // Eliminar foto anterior si existe (excepto la por defecto)
+        if ($profesor->foto_perfil && !str_contains($profesor->foto_perfil, 'github.com')) {
+            Storage::delete($profesor->foto_perfil);
+        }
+
+        $path = $request->file('foto_perfil')->store('profesores/fotos', 'public');
+        $profesor->foto_perfil = $path;
+        $profesor->save();
+
+        return response()->json([
+            'success' => true,
+            'path' => asset("storage/$path")
+        ]);
+    }
+
+    // funcion para eliminar la foto
+    public function deletePhoto($id) {
+        $profesor = Profesor::findOrFail($id);
+
+        if ($profesor->foto_perfil && !str_contains($profesor->foto_perfil, 'github.com')) {
+            Storage::delete($profesor->foto_perfil);
+        }
+
+        $profesor->foto_perfil = null;
+        $profesor->save();
+
+        return response()->json([
+            'success' => true,
+            'path' => 'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png'
+        ]);
+    }
+
+    public function uploadUserPhoto(Request $request, $userId)
+    {
+        $authUser = $request->user();
+        if (!$authUser || !$this->canAccessUserAccount($authUser, (int) $userId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $request->validate([
+            'foto_perfil' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $user = User::findOrFail($userId);
+
+        // Eliminar foto anterior si existe
+        if ($user->foto_perfil && Storage::disk('public')->exists($user->foto_perfil)) {
+            Storage::disk('public')->delete($user->foto_perfil);
+        }
+
+        $extension = $request->file('foto_perfil')->getClientOriginalExtension();
+        $filename = Str::uuid() . '.' . strtolower($extension);
+        $path = $request->file('foto_perfil')->storeAs('users/fotos', $filename, 'public');
+        $user->foto_perfil = $path;
+        $user->save();
+
+        // Construir la URL completa de la foto
+        $photoUrl = null;
+        if ($user->foto_perfil) {
+            // Extraer solo el nombre del archivo de la ruta
+            $filename = basename($user->foto_perfil);
+            // Construir URL usando la ruta de API
+            $photoUrl = url("api/storage/users/fotos/{$filename}");
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Foto de perfil actualizada correctamente',
+            'path' => $photoUrl,
+            'foto_perfil' => $user->foto_perfil,
+            'photo_url' => $photoUrl
+        ], 200);
+    }
+
+    public function getUserPhoto(Request $request, $userId)
+    {
+        $authUser = $request->user();
+        if (!$authUser || !$this->canAccessUserAccount($authUser, (int) $userId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $user = User::findOrFail($userId);
+
+        $photoUrl = null;
+        if ($user->foto_perfil && Storage::disk('public')->exists($user->foto_perfil)) {
+            $filename = basename($user->foto_perfil);
+            $photoUrl = url("api/storage/users/fotos/{$filename}");
+        }
+
+        return response()->json([
+            'success' => true,
+            'foto_perfil' => $user->foto_perfil,
+            'photo_url' => $photoUrl,
+        ]);
+    }
+
+    public function serveUserPhoto($filename)
+    {
+        $safeName = basename($filename);
+        if ($safeName !== $filename || str_contains($filename, '..')) {
+            return abort(404);
+        }
+
+        $user = User::where('foto_perfil', 'like', '%' . $safeName)->first();
+        if (!$user) {
+            return abort(404);
+        }
+
+        $basePath = realpath(storage_path('app/public/users/fotos'));
+        $filePath = storage_path('app/public/users/fotos/' . $safeName);
+        $realPath = realpath($filePath);
+
+        if (!$basePath || !$realPath || !str_starts_with($realPath, $basePath)) {
+            return abort(404);
+        }
+
+        $mime = mime_content_type($realPath) ?: 'image/jpeg';
+
+        return response()->file($realPath, ['Content-Type' => $mime]);
+    }
+
+    // FunciÃ³n para asignar rol a un usuario
+    public function asignarRol(Request $request, $userId) 
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'rol' => 'required|string|exists:roles,rol',
+            ], [
+                'rol.exists' => 'El rol especificado no existe en el sistema',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error en la validaciÃ³n de datos',
+                    'errors' => $validator->errors()
+                ], 400);
+            }
+
+            // Buscar usuario y rol
+            $user = User::findOrFail($userId);
+            $rol = Rol::where('rol', $request->input('rol'))->first();
+
+            // âœ… Verificar si ya tiene el rol
+            if ($user->roles()->where('rol_id', $rol->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El usuario ya tiene asignado el rol '{$rol->nombre}'",
+                    'roles_actuales' => $user->roles()->pluck('rol')
+                ], 409); // 409 Conflict
+            }
+
+            // Asignar el rol
+            $user->roles()->attach($rol->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Rol '{$rol->rol}' asignado correctamente al usuario {$user->nombre}",
+                'roles_actuales' => $user->roles()->pluck('rol')
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al asignar rol: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Usuario autenticado actual (valida el token Sanctum)
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        $roles = $user->roles()->select('roles.id', 'rol', 'descripcion', 'estado')->get();
+
+        $profesor = Profesor::where('user_id', $user->id)->first();
+        $datosProfesor = null;
+
+        if ($profesor) {
+            $profesorEscuela = DB::table('profesor_escuela')
+                ->where('id_profesor', $profesor->id)
+                ->whereNull('deleted_at')
+                ->orderBy('edicion', 'desc')
+                ->first();
+
+            if ($profesorEscuela) {
+                $datosProfesor = [
+                    'id' => $profesor->user_id,
+                    'profesor_id' => $profesor->id,
+                    'id_escuela' => $profesorEscuela->id_escuela,
+                    'edicion_actual' => $profesorEscuela->edicion,
+                    'es_nuevo' => $profesor->es_nuevo,
+                    'perfil_editado' => $profesor->perfil_editado,
+                    'esta_activo' => $profesor->esta_activo,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'nombre' => $user->nombre,
+                'apellidos' => $user->apellidos,
+                'correo' => $user->correo,
+                'nro_ci' => $user->nro_ci,
+                'telefono' => $user->telefono,
+                'foto_perfil' => $user->foto_perfil,
+                'roles' => $roles,
+                'profesor' => $datosProfesor,
+                'territorio' => \App\Support\TerritorioCoord::forUser($user),
+            ],
+        ]);
+    }
+
+    /**
+     * Login simple y funcional
+     * @author: Rui SÃrgio ManÃ©
+     */
+    public function login(Request $request)
+    {
+        try {
+            // Validar datos de entrada
+            $request->validate([
+                'correo' => 'required|email',
+                'contrasenia' => 'required|string',
+            ]);
+
+            // Buscar usuario por correo
+            $user = User::where('correo', $request->correo)->first();
+
+            // Verificar si el usuario existe
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ], 401);
+            }
+
+            // Verificar contraseña
+            if (!Hash::check($request->contrasenia, $user->contrasenia)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Contraseña incorrecta'
+                ], 401);
+            }
+
+            // Obtener roles del usuario
+            $roles = $user->roles()->select('roles.id', 'rol', 'descripcion', 'estado')->get();
+
+            // Ordenar roles por prioridad para definir un "rol principal" consistente
+            $rolePriority = [
+                'Administrador',
+                'Coordinador Nacional',
+                'Coordinador Asistente',
+                'Representante MINED/MES',
+                'Representante Provincial MINED',
+                'Coordinador Provincial MINED',
+                'Coordinador Municipal MINED',
+                'Elaborador Tareas Bebras',
+                'Revisor Tareas Bebras',
+                'Colaborador Bebras',
+                'Colaborador Universitario Bebras',
+                'Responsable Colaborador Universitario Bebras',
+                'Profesor',
+                'Estudiante',
+            ];
+            $rolePriorityMap = array_flip($rolePriority);
+            $roles = $roles
+                ->sortBy(fn ($role) => $rolePriorityMap[$role->rol] ?? 999)
+                ->values();
+
+            if ($roles->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El usuario no tiene roles asignados. Contacta al administrador.'
+                ], 403);
+            }
+
+            // Verificar si el usuario tiene el rol de Profesor
+            $tieneRolProfesor = $roles->contains('rol', 'Profesor');
+            // Si además tiene un rol de gestión, no bloquear login por reglas exclusivas de profesor
+            $rolesGestion = [
+                'Administrador',
+                'Coordinador Nacional',
+                'Coordinador Asistente',
+                'Representante MINED/MES',
+                'Representante Provincial MINED',
+                'Coordinador Provincial MINED',
+                'Coordinador Municipal MINED',
+                'Elaborador Tareas Bebras',
+                'Revisor Tareas Bebras',
+                'Colaborador Bebras',
+                'Colaborador Universitario Bebras',
+                'Responsable Colaborador Universitario Bebras',
+            ];
+            $tieneRolGestion = $roles->pluck('rol')->intersect($rolesGestion)->isNotEmpty();
+
+            // ===== VALIDACIONES ESPECÍFICAS PARA PROFESORES =====
+            if ($tieneRolProfesor && !$tieneRolGestion) {
+                \Log::info('Intentando login de profesor', ['user_id' => $user->id]);
+
+                // 1. Verificar si hay una edición abierta
+                $edicionAbierta = Edicion::where('abierto', true)->first();
+                
+                if (!$edicionAbierta) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La edición está cerrada en este momento. Por favor, aguarde por la abertura de la nueva edición del concurso.',
+                        'tipo_error' => 'edicion_cerrada'
+                    ], 403);
+                }
+
+                // 2. Buscar registro del profesor usando where en lugar de relación
+                $profesor = \App\Models\Profesor::where('user_id', $user->id)->first();
+                
+                if (!$profesor) {
+                    \Log::error('Usuario con rol Profesor sin registro en tabla profesores', ['user_id' => $user->id]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tu cuenta de profesor no está completa. Por favor, contacta al administrador del sistema.',
+                        'tipo_error' => 'registro_incompleto'
+                    ], 403);
+                }
+
+                // 3. Verificar si el profesor está activo
+                if (!$profesor->esta_activo) {
+                    \Log::info('Intento de login de profesor inactivo', ['user_id' => $user->id, 'profesor_id' => $profesor->id]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tu solicitud de registro está pendiente de aprobación. Por favor, contacta a tu coordinador municipal o provincial para que active tu cuenta.',
+                        'tipo_error' => 'cuenta_inactiva'
+                    ], 403);
+                }
+
+                // 4. Obtener escuela asignada
+                $profesorEscuela = DB::table('profesor_escuela')
+                    ->where('id_profesor', $profesor->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('edicion', 'desc')
+                    ->first();
+
+                if (!$profesorEscuela) {
+                    \Log::warning('Profesor sin escuela asignada', ['user_id' => $user->id, 'profesor_id' => $profesor->id]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No tienes una escuela asignada. Por favor, contacta a tu coordinador para que te asignen una escuela.',
+                        'tipo_error' => 'sin_escuela'
+                    ], 403);
+                }
+
+                $ubicacionEscuela = DB::table('escuelas as esc')
+                    ->join('municipios as mun', 'esc.cdgo_municipio', '=', 'mun.codigo')
+                    ->join('provincias as prov', 'mun.cdgo_provincia', '=', 'prov.codigo')
+                    ->where('esc.id', $profesorEscuela->id_escuela)
+                    ->whereNull('esc.deleted_at')
+                    ->select(
+                        'esc.nombre as nombre_escuela',
+                        'mun.nombre as municipio',
+                        'prov.nombre as provincia'
+                    )
+                    ->first();
+
+                // Todo OK para profesor - Preparar datos
+                // IMPORTANTE: Guardar user_id (ID de la tabla users) como 'id' 
+                // porque el frontend espera usar user_id para las relaciones
+                $datosProfesor = [
+                    'id' => $profesor->user_id, // Guardar user_id en lugar de profesor->id
+                    'profesor_id' => $profesor->id, // También guardar el ID del profesor por si se necesita
+                    'id_escuela' => $profesorEscuela->id_escuela,
+                    'nombre_escuela' => $ubicacionEscuela->nombre_escuela ?? null,
+                    'provincia' => $ubicacionEscuela->provincia ?? null,
+                    'municipio' => $ubicacionEscuela->municipio ?? null,
+                    'edicion_actual' => $profesorEscuela->edicion,
+                    'es_nuevo' => $profesor->es_nuevo,
+                    'perfil_editado' => $profesor->perfil_editado,
+                    'esta_activo' => $profesor->esta_activo
+                ];
+
+                // Crear token
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                \Log::info('Login exitoso de profesor', [
+                    'user_id' => $user->id,
+                    'profesor_id' => $profesor->id,
+                    'escuela_id' => $profesorEscuela->id_escuela
+                ]);
+
+                // Respuesta exitosa para profesor
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bienvenido Profesor',
+                    'user' => [
+                        'id' => $user->id,
+                        'nombre' => $user->nombre,
+                        'apellidos' => $user->apellidos,
+                        'correo' => $user->correo,
+                        'nro_ci' => $user->nro_ci,
+                        'telefono' => $user->telefono,
+                        'foto_perfil' => $user->foto_perfil,
+                        'roles' => $roles,
+                        'profesor' => $datosProfesor
+                    ],
+                    'token' => $token
+                ], 200);
+            }
+
+            // ===== PARA OTROS ROLES =====
+            // Roles que NO requieren validación de edición ni profesor activo:
+            // Administrador, Coordinador Nacional, Coordinador Asistente,
+            // Coordinador Provincial MINED, Coordinador Municipal MINED, etc.
+            
+            \Log::info('Login de usuario no-profesor', [
+                'user_id' => $user->id,
+                'roles' => $roles->pluck('rol')->toArray()
+            ]);
+
+            // Intentar obtener datos del profesor si existen (usuarios con múltiples roles)
+            $profesor = \App\Models\Profesor::where('user_id', $user->id)->first();
+            $datosProfesor = null;
+            
+            if ($profesor) {
+                $profesorEscuela = DB::table('profesor_escuela')
+                    ->where('id_profesor', $profesor->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('edicion', 'desc')
+                    ->first();
+
+                if ($profesorEscuela) {
+                    $ubicacionEscuela = DB::table('escuelas as esc')
+                        ->join('municipios as mun', 'esc.cdgo_municipio', '=', 'mun.codigo')
+                        ->join('provincias as prov', 'mun.cdgo_provincia', '=', 'prov.codigo')
+                        ->where('esc.id', $profesorEscuela->id_escuela)
+                        ->whereNull('esc.deleted_at')
+                        ->select(
+                            'esc.nombre as nombre_escuela',
+                            'mun.nombre as municipio',
+                            'prov.nombre as provincia'
+                        )
+                        ->first();
+
+                    $datosProfesor = [
+                        'id' => $profesor->user_id,
+                        'profesor_id' => $profesor->id,
+                        'id_escuela' => $profesorEscuela->id_escuela,
+                        'nombre_escuela' => $ubicacionEscuela->nombre_escuela ?? null,
+                        'provincia' => $ubicacionEscuela->provincia ?? null,
+                        'municipio' => $ubicacionEscuela->municipio ?? null,
+                        'edicion_actual' => $profesorEscuela->edicion,
+                        'es_nuevo' => $profesor->es_nuevo,
+                        'perfil_editado' => $profesor->perfil_editado,
+                        'esta_activo' => $profesor->esta_activo,
+                    ];
+                }
+            }
+
+            // Crear token
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Mensaje de bienvenida personalizado según el rol principal
+            $primerRol = $roles->first();
+            $mensajeBienvenida = 'Login exitoso';
+            
+            if ($primerRol) {
+                $rolesConMensaje = [
+                    'Administrador' => 'Bienvenido Administrador',
+                    'Coordinador Nacional' => 'Bienvenido Coordinador Nacional',
+                    'Coordinador Asistente' => 'Bienvenido Coordinador Asistente',
+                    'Representante MINED/MES' => 'Bienvenido Representante',
+                    'Representante Provincial MINED' => 'Bienvenido Representante Provincial',
+                    'Coordinador Provincial MINED' => 'Bienvenido Coordinador Provincial',
+                    'Coordinador Municipal MINED' => 'Bienvenido Coordinador Municipal',
+                    'Elaborador Tareas Bebras' => 'Bienvenido Elaborador de Tareas',
+                    'Revisor Tareas Bebras' => 'Bienvenido Revisor de Tareas',
+                    'Colaborador Bebras' => 'Bienvenido Colaborador',
+                    'Colaborador Universitario Bebras' => 'Bienvenido Colaborador Universitario',
+                    'Responsable Colaborador Universitario Bebras' => 'Bienvenido Responsable de Colaboradores',
+                ];
+                
+                $mensajeBienvenida = $rolesConMensaje[$primerRol->rol] ?? 'Bienvenido';
+            }
+
+            $territorio = \App\Support\TerritorioCoord::forUser($user);
+
+            // Respuesta exitosa para otros roles
+            return response()->json([
+                'success' => true,
+                'message' => $mensajeBienvenida,
+                'user' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'apellidos' => $user->apellidos,
+                    'correo' => $user->correo,
+                    'nro_ci' => $user->nro_ci,
+                    'telefono' => $user->telefono,
+                    'foto_perfil' => $user->foto_perfil,
+                    'roles' => $roles,
+                    'profesor' => $datosProfesor,
+                    'territorio' => $territorio,
+                ],
+                'token' => $token
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en login:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'correo' => $request->correo ?? 'no-email'
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en el servidor',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Registro simple para crear usuarios de prueba
+     * @author: Rui SÃ©rgio ManÃ©
+     */
+    
+    public function register(Request $request)
+    {
+        try {
+            // Validar datos de entrada segÃºn la estructura real de la tabla
+            $request->validate([
+                'nombre' => 'required|string|max:255',
+                'apellidos' => 'required|string|max:255',
+                'correo' => 'required|email|unique:users,correo',
+                'nro_ci' => 'required|string|unique:users,nro_ci',
+                'telefono' => 'required|string|unique:users,telefono',
+                'contrasenia' => 'required|string|min:6',
+                'pin' => 'required|string|min:4',
+            ]);
+
+            // Crear el usuario con todos los campos requeridos
+            $user = User::create([
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'correo' => $request->correo,
+                'contrasenia' => Hash::make($request->contrasenia), // Hashear la contraseÃ±a
+                'nro_ci' => $request->nro_ci,
+                'telefono' => $request->telefono,
+                'pin' => Hash::make($request->pin), // Hashear el pin
+                'esta_activo' => true, // Activar el usuario por defecto
+                'es_nuevo' => true,
+                'perfil_editado' => false,
+            ]);
+
+            // Crear token usando Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario registrado exitosamente',
+                'user' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'apellidos' => $user->apellidos,
+                    'correo' => $user->correo,
+                    'nro_ci' => $user->nro_ci,
+                    'telefono' => $user->telefono,
+                    'esta_activo' => $user->esta_activo,
+                    'es_nuevo' => $user->es_nuevo,
+                    'perfil_editado' => $user->perfil_editado,
+                ],
+                'token' => $token
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en el servidor durante el registro',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Logout simple
+     * @author: Rui SÃ©rgio ManÃ©
+     */
+    public function logout(Request $request)
+    {
+        try {
+            // Revocar token actual
+            $request->user()->currentAccessToken()->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'SesiÃ³n cerrada exitosamente'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cerrar sesiÃ³n',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Listar todos los usuarios con sus roles y número de escuela (si es profesor)
+     * @author: Sistema
+     */
+    public function listarTodosUsuarios()
+    {
+        try {
+            // Obtener todos los usuarios con sus roles
+            $usuarios = User::with('roles')->get();
+
+            // Transformar los datos
+            $usuariosTransformados = $usuarios->map(function ($user) {
+                // Obtener roles del usuario
+                $roles = $user->roles->map(function ($rol) {
+                    return $rol->rol;
+                })->toArray();
+                
+                // Obtener número de escuela si es profesor
+                $codigoEscuela = null;
+                $profesor = Profesor::where('user_id', $user->id)->first();
+                
+                if ($profesor) {
+                    // Obtener la escuela del profesor desde profesor_escuela
+                    $profesorEscuela = DB::table('profesor_escuela')
+                        ->where('id_profesor', $profesor->id)
+                        ->whereNull('deleted_at')
+                        ->orderBy('edicion', 'desc')
+                        ->first();
+                    
+                    if ($profesorEscuela) {
+                        $escuela = Escuela::find($profesorEscuela->id_escuela);
+                        if ($escuela) {
+                            $codigoEscuela = $escuela->codigo;
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'apellidos' => $user->apellidos,
+                    'correo' => $user->correo,
+                    'telefono' => $user->telefono,
+                    'roles' => $roles,
+                    'codigo_escuela' => $codigoEscuela,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuariosTransformados
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al listar usuarios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+}
